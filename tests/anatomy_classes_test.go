@@ -1,6 +1,6 @@
 package form_test
 
-import "github.com/tinywasm/widget"
+import "webtyp.com/widget"
 
 // The field anatomy classes, DERIVED from widget rather than written out.
 //

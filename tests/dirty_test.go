@@ -3,7 +3,7 @@ package form_test
 import (
 	"testing"
 
-	"github.com/tinywasm/form"
+	"webtyp.com/form"
 )
 
 // TestIsDirty covers the consumer-shaped use case a host (e.g. crudview's

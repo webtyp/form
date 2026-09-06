@@ -6,7 +6,7 @@
 ## Library Rules (Non-Negotiable)
 
 - **No stdlib imports** in library code. Never `errors`, `strconv`, `strings`, `reflect`.
-- **Use `github.com/tinywasm/fmt`**: `fmt.Err("Noun", "Adjective")` for errors,
+- **Use `webtyp.com/fmt`**: `fmt.Err("Noun", "Adjective")` for errors,
   `fmt.Convert(s).Int()` instead of `strconv.Atoi`, `fmt.Contains(s, sub)`
   instead of `strings.Contains`.
 - **No maps in inputs**: use slices — maps increase WASM binary size.

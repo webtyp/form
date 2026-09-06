@@ -1,11 +1,11 @@
 package form_test
 
-import "github.com/tinywasm/model"
+import "webtyp.com/model"
 
 import (
-	"github.com/tinywasm/fmt"
-	"github.com/tinywasm/form"
-	"github.com/tinywasm/input"
+	"webtyp.com/fmt"
+	"webtyp.com/form"
+	"webtyp.com/input"
 )
 
 // testIDGen is a deterministic test double for model.IDGenerator — form must

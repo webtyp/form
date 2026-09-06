@@ -1,23 +1,23 @@
-# Agent Guide — `tinywasm/form`
+# Agent Guide — `webtyp/form`
 
 Constraints for agents working on the form library. Read this before any change.
 
 ---
 
-## Construction Harness — typed & explicit (the TinyWasm approach)
+## Construction Harness — typed & explicit (the WebTyp approach)
 
-This library is part of TinyWasm's **construction harness**: the typed, explicit API is what keeps an
+This library is part of WebTyp's **construction harness**: the typed, explicit API is what keeps an
 agent that doesn't know the library from building wrong code. The compiler must reject mistakes; what
 it can't catch becomes a `devMode` warning — never a silent failure.
 
-- **Typed over `any`** — no generic slots; typed builder methods (like `tinywasm/json`), reusing `fmt` types. Anything reactive goes only through a signal binding (`BindText`/`Bind*`), which requires a signal.
+- **Typed over `any`** — no generic slots; typed builder methods (like `webtyp/json`), reusing `fmt` types. Anything reactive goes only through a signal binding (`BindText`/`Bind*`), which requires a signal.
 - **Explicit names** — `Text` (static) vs `BindText` (reactive); reading the call states intent.
 - **Illegal states unrepresentable** — dynamic content has ONE path, typed to require a signal.
 - **Minimal public surface** — export only what the author types; engine plumbing stays unexported.
 - **Docs are minimal "how" instructions, not long skills** — if a rule must be *remembered*, close it
   with types, not prose.
 
-(Ecosystem rationale: `tinywasm/app/docs/CONSTRUCTION_HARNESS.md`.)
+(Ecosystem rationale: `webtyp/app/docs/CONSTRUCTION_HARNESS.md`.)
 
 ---
 
@@ -40,7 +40,7 @@ that imperative model is removed.
 
 ## No Generics
 
-Zero generic functions (follow `tinywasm/fmt` codec rule "cero any, cero map"). Use concrete typed
+Zero generic functions (follow `webtyp/fmt` codec rule "cero any, cero map"). Use concrete typed
 signals: `SignalString`/`SignalBool`/`SignalNodes`, `DeriveString`/`DeriveBool`, and the `Bind*`
 methods. Never `Signal[T]`.
 
@@ -62,13 +62,13 @@ helpers, the per-field model, and anything only this package uses. Struct fields
 
 - `//go:build wasm` for reactive code (`mount.go`); keep the `!wasm` stub (`mount_stub.go`) method
   set in sync (it shrinks — no `OnMount`/`OnUnmount`).
-- No Go stdlib: use `github.com/tinywasm/fmt`. DOM only via `github.com/tinywasm/dom`, never
+- No Go stdlib: use `webtyp.com/fmt`. DOM only via `webtyp.com/dom`, never
   `syscall/js`. No `defer/recover`.
 
 ## Testing
 
 ```bash
-go install github.com/tinywasm/devflow/cmd/gotest@latest
+go install webtyp.com/devflow/cmd/gotest@latest
 gotest
 ```
 

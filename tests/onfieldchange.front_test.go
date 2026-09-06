@@ -6,11 +6,11 @@ import (
 	"syscall/js"
 	"testing"
 
-	"github.com/tinywasm/dom"
-	"github.com/tinywasm/input"
-	"github.com/tinywasm/model"
+	"webtyp.com/dom"
+	"webtyp.com/input"
+	"webtyp.com/model"
 
-	"github.com/tinywasm/form"
+	"webtyp.com/form"
 )
 
 type ofcRecord struct {
@@ -65,7 +65,7 @@ func TestOnFieldChange_FiresOnBlur(t *testing.T) {
 	// Simulate real user interaction: edit (input event — this is what updates
 	// the bound value signal), then blur (the commit point). A dispatched Event
 	// invokes listeners regardless of real window/tab focus state, matching the
-	// pattern tinywasm/dom's own TestTwoWayInput uses for "input".
+	// pattern webtyp/dom's own TestTwoWayInput uses for "input".
 	el.Set("value", "changed")
 	el.Call("dispatchEvent", js.Global().Get("Event").New("input"))
 	el.Call("dispatchEvent", js.Global().Get("Event").New("blur"))

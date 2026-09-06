@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tinywasm/form"
+	"webtyp.com/form"
 )
 
 func TestDirtyFieldsIsEmptyOnAFreshForm(t *testing.T) {

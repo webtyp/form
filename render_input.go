@@ -1,10 +1,10 @@
 package form
 
 import (
-	"github.com/tinywasm/dom"
-	"github.com/tinywasm/fmt"
-	"github.com/tinywasm/input"
-	"github.com/tinywasm/widget"
+	"webtyp.com/dom"
+	"webtyp.com/fmt"
+	"webtyp.com/input"
+	"webtyp.com/widget"
 )
 
 // labelChars is the label's budget, calibrated against the --chip-width the

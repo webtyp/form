@@ -1,18 +1,18 @@
-# tinywasm/form
+# webtyp/form
 <img src="docs/img/badges.svg">
 
 HTML forms generated from your model schema — validation included, no
 reflection, TinyGo/WASM-ready. You don't declare forms: you declare a
-[model.Definition](https://github.com/tinywasm/model) once, and fields whose
+[model.Definition](https://github.com/webtyp/model) once, and fields whose
 kind is an `input.*` type become form inputs automatically.
 
-This package is part of the [tinywasm ecosystem](https://github.com/tinywasm)
+This package is part of the [webtyp ecosystem](https://github.com/webtyp)
 — Go libraries for building full-stack web apps compiled to WebAssembly.
 
 ## Install
 
 ```bash
-go get github.com/tinywasm/form   # brings tinywasm/model as dependency
+go get webtyp.com/form   # brings webtyp/model as dependency
 ```
 
 The code generator tooling is covered in step 2 of the Quick Start.
@@ -21,7 +21,7 @@ The code generator tooling is covered in step 2 of the Quick Start.
 
 ### 1. Define your model
 
-Two imports: [`model`](https://github.com/tinywasm/model) provides the schema
+Two imports: [`model`](https://github.com/webtyp/model) provides the schema
 types and base kinds (`model.Text()`, `model.Int()`, …); `input` is this
 package's sub-package with the form kinds (`input.Text()`, `input.Email()`, …).
 The kind you choose per field decides everything: `input.*` = form input +
@@ -29,8 +29,8 @@ validation; `model.*` = validation only (never rendered).
 
 ```go
 import (
-    "github.com/tinywasm/model"
-    "github.com/tinywasm/input"
+    "webtyp.com/model"
+    "webtyp.com/input"
 )
 
 var UserModel = model.Definition{
@@ -76,21 +76,21 @@ From your `model.Definition` vars, the generator emits `<file>_orm.go` next
 to each model file: the row struct plus the `model.Fielder` methods
 (`Schema()`, `Pointers()`, `Values()`). You never write these by hand.
 
-**Recommended**: use the [`tinywasm`](https://github.com/tinywasm/app) dev
+**Recommended**: use the [`webtyp`](https://github.com/webtyp/app) dev
 environment — it watches your model files and regenerates `*_orm.go`
 automatically with hot reload:
 
 ```bash
-go install github.com/tinywasm/app/cmd/tinywasm@latest
-tinywasm -tui    # interactive dev server (or -mcp for AI agents)
+go install webtyp.com/app/cmd/webtyp@latest
+webtyp -tui    # interactive dev server (or -mcp for AI agents)
 ```
 
-**Manual alternative**: run [`ormc`](https://github.com/tinywasm/ormc)
-(the standalone generator that `tinywasm` uses internally) once in your
+**Manual alternative**: run [`ormc`](https://github.com/webtyp/ormc)
+(the standalone generator that `webtyp` uses internally) once in your
 module:
 
 ```bash
-go install github.com/tinywasm/ormc/cmd/ormc@latest
+go install webtyp.com/ormc/cmd/ormc@latest
 ormc
 ```
 
@@ -102,7 +102,7 @@ values back into it. The schema travels along anyway: the generated
 `Schema()` method returns `UserModel.Fields`.
 
 ```go
-import "github.com/tinywasm/form"
+import "webtyp.com/form"
 
 f, err := form.New("parent-id", &User{Name: "John"}, ids)  // ids: model.IDGenerator (e.g. unixid.NewUnixID())
 html := f.String()          // SSR: render to HTML string
@@ -110,11 +110,11 @@ html := f.String()          // SSR: render to HTML string
 
 ### 4. Make it interactive (WASM)
 
-[`dom`](https://github.com/tinywasm/dom) mounts components in the browser
+[`dom`](https://github.com/webtyp/dom) mounts components in the browser
 (compiled with TinyGo):
 
 ```go
-import "github.com/tinywasm/dom"
+import "webtyp.com/dom"
 
 f.LoadValues(record) // registro → formulario (el usuario selecciona)
 f.Validate()         // el usuario edita y guarda
@@ -142,7 +142,7 @@ Runtime tweaks: `f.Input("Field").SetPlaceholder(...)`,
 ## Styling
 
 The library ships structure, the project owns the look (CSS-first doctrine).
-The forms do not embed CSS or rely on custom styling libraries, but instead emit a standard semantic anatomy defined by `tinywasm/widget`:
+The forms do not embed CSS or rely on custom styling libraries, but instead emit a standard semantic anatomy defined by `webtyp/widget`:
 
 1. **Stable anatomy and class contract** — every bound field renders with the classes:
    - Root container: `tw-field`
@@ -249,7 +249,7 @@ character whitelists — see [API Reference](docs/API.md).
 
 ---
 
-## [Contributing](https://github.com/tinywasm/contributing)
+## [Contributing](https://github.com/webtyp/contributing)
 
 ---
 

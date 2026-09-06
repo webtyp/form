@@ -3,10 +3,10 @@ package form_test
 import (
 	"testing"
 
-	"github.com/tinywasm/dom"
-	"github.com/tinywasm/fmt"
-	"github.com/tinywasm/form"
-	"github.com/tinywasm/input"
+	"webtyp.com/dom"
+	"webtyp.com/fmt"
+	"webtyp.com/form"
+	"webtyp.com/input"
 )
 
 type customInput struct {

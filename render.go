@@ -1,8 +1,8 @@
 package form
 
 import (
-	"github.com/tinywasm/dom"
-	"github.com/tinywasm/widget"
+	"webtyp.com/dom"
+	"webtyp.com/widget"
 )
 
 // SetSSR enables or disables SSR mode for this form.

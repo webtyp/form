@@ -3,9 +3,9 @@ package form_test
 import (
 	"testing"
 
-	"github.com/tinywasm/form"
-	"github.com/tinywasm/input"
-	"github.com/tinywasm/model"
+	"webtyp.com/form"
+	"webtyp.com/input"
+	"webtyp.com/model"
 )
 
 // Test model with plain model.Kind types (no widgets)

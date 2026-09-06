@@ -1,12 +1,12 @@
 package form_test
 
-import "github.com/tinywasm/model"
+import "webtyp.com/model"
 
 import (
 	"testing"
 
-	"github.com/tinywasm/form"
-	"github.com/tinywasm/input"
+	"webtyp.com/form"
+	"webtyp.com/input"
 )
 
 type testUser struct {

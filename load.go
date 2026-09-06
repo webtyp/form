@@ -1,8 +1,8 @@
 package form
 
 import (
-	"github.com/tinywasm/fmt"
-	"github.com/tinywasm/model"
+	"webtyp.com/fmt"
+	"webtyp.com/model"
 )
 
 // LoadValues populates every input from data, the inverse of SyncValues.

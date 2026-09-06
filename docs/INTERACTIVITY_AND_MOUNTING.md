@@ -4,7 +4,7 @@
 
 ## Signal-Bound Fields
 
-`tinywasm/form` uses a reactive binding model via `github.com/tinywasm/dom` signals. Unlike traditional imperative mounting where a form must "attach" listeners after being added to the DOM, this form is reactive by construction.
+`webtyp/form` uses a reactive binding model via `webtyp.com/dom` signals. Unlike traditional imperative mounting where a form must "attach" listeners after being added to the DOM, this form is reactive by construction.
 
 Each field is bound to a `SignalString` for its value and another for its error state.
 
@@ -27,7 +27,7 @@ errSpan := dom.NewElement("span").
 
 ## Advantages of Reactive Binding
 
-1. **IME & Cursor Safety**: Two-way `Bind` in `tinywasm/dom` is designed to be cursor-safe. It detects if the element is currently focused and active (e.g., during IME composition for accents or CJK characters) and avoids patching the `value` attribute if it matches the current signal value. This prevents cursor jumps and broken compositions.
+1. **IME & Cursor Safety**: Two-way `Bind` in `webtyp/dom` is designed to be cursor-safe. It detects if the element is currently focused and active (e.g., during IME composition for accents or CJK characters) and avoids patching the `value` attribute if it matches the current signal value. This prevents cursor jumps and broken compositions.
 2. **Surgical Updates**: When a user types, only the specific error text node and CSS classes are patched in the DOM. The `<input>` node itself is never replaced or re-rendered.
 3. **No Lifecycle Hooks**: There is no `OnMount` or `OnUnmount`. The form is a `dom.Component` that provides a `Render() *dom.Element` method. The DOM tree it returns is already "alive" with signal bindings.
 

@@ -3,9 +3,9 @@ package form_test
 import (
 	"testing"
 
-	"github.com/tinywasm/dom"
-	"github.com/tinywasm/form"
-	"github.com/tinywasm/model"
+	"webtyp.com/dom"
+	"webtyp.com/form"
+	"webtyp.com/model"
 )
 
 type mockFielder struct {

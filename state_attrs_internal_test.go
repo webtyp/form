@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tinywasm/fmt"
-	"github.com/tinywasm/input"
-	"github.com/tinywasm/model"
+	"webtyp.com/fmt"
+	"webtyp.com/input"
+	"webtyp.com/model"
 )
 
 type stateAttrsStruct struct {

@@ -1,8 +1,8 @@
 package form
 
 import (
-	"github.com/tinywasm/fmt"
-	"github.com/tinywasm/model"
+	"webtyp.com/fmt"
+	"webtyp.com/model"
 )
 
 // ValidateData validates a Fielder instance using this form's input rules.

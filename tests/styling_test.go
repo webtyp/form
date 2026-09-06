@@ -3,9 +3,9 @@ package form_test
 import (
 	"testing"
 
-	"github.com/tinywasm/fmt"
-	"github.com/tinywasm/form"
-	"github.com/tinywasm/widget"
+	"webtyp.com/fmt"
+	"webtyp.com/form"
+	"webtyp.com/widget"
 )
 
 // formHook is the class the <form> element itself carries — see

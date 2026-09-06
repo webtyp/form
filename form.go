@@ -1,11 +1,11 @@
 package form
 
-import "github.com/tinywasm/model"
+import "webtyp.com/model"
 
 import (
-	"github.com/tinywasm/dom"
-	"github.com/tinywasm/fmt"
-	"github.com/tinywasm/input"
+	"webtyp.com/dom"
+	"webtyp.com/fmt"
+	"webtyp.com/input"
 )
 
 // Form represents a form instance.

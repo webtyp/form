@@ -3,9 +3,9 @@ package form_test
 import (
 	"testing"
 
-	"github.com/tinywasm/form"
-	"github.com/tinywasm/input"
-	"github.com/tinywasm/model"
+	"webtyp.com/form"
+	"webtyp.com/input"
+	"webtyp.com/model"
 )
 
 // TestNumberAndDecimal_Storage pins the storage of each numeric widget: Number()
@@ -51,7 +51,7 @@ func TestDecimal_RoundTripsFractionalValue(t *testing.T) {
 		t.Fatalf("SyncValues: %v", err)
 	}
 
-	// tinywasm/fmt's float<->string conversion documents 6-decimal-place precision
+	// webtyp/fmt's float<->string conversion documents 6-decimal-place precision
 	// (see fmt.Conv.wrFloatBase), not bit-exact float64 round-trip — a ~1e-13 diff
 	// here is that library's known rounding, not a truncation to int. What THIS
 	// test guards against is the real bug: Price silently becoming a whole number.

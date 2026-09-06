@@ -1,13 +1,13 @@
 package form_test
 
-import "github.com/tinywasm/model"
+import "webtyp.com/model"
 
 import (
 	"testing"
 
-	"github.com/tinywasm/fmt"
-	"github.com/tinywasm/form"
-	"github.com/tinywasm/input"
+	"webtyp.com/fmt"
+	"webtyp.com/form"
+	"webtyp.com/input"
 )
 
 func TestForm_NewAndBinding_Shared(t *testing.T) {

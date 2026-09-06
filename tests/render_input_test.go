@@ -3,10 +3,10 @@ package form_test
 import (
 	"testing"
 
-	"github.com/tinywasm/fmt"
-	"github.com/tinywasm/form"
-	"github.com/tinywasm/input"
-	"github.com/tinywasm/model"
+	"webtyp.com/fmt"
+	"webtyp.com/form"
+	"webtyp.com/input"
+	"webtyp.com/model"
 )
 
 // kindFixture is a one-field Fielder used to render a single input kind

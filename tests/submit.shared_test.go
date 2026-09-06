@@ -1,9 +1,9 @@
 package form_test
 
 import (
-	"github.com/tinywasm/form"
-	"github.com/tinywasm/input"
-	"github.com/tinywasm/model"
+	"webtyp.com/form"
+	"webtyp.com/input"
+	"webtyp.com/model"
 	"testing"
 )
 

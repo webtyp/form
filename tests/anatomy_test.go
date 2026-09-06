@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/tinywasm/form"
-	"github.com/tinywasm/input"
-	"github.com/tinywasm/model"
+	"webtyp.com/form"
+	"webtyp.com/input"
+	"webtyp.com/model"
 )
 
 type anatomyStruct struct {
