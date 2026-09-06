@@ -1,0 +1,10 @@
+webtyp.com/dom v0.13.10 h1:ezdPucWXutge5BGuDROuzmhTkkI+Zxx/ir/K+4ZTi9Y=
+webtyp.com/dom v0.13.10/go.mod h1:p7Vl/6A0VR3GU+NHR4Ggn0oTnRRBPUZ9+RziR5tDB4Q=
+webtyp.com/fmt v1.0.0 h1:W0vMMGC6ezg1q2LarAEaVnNvZ26hVqzZdQQH1wcNogM=
+webtyp.com/fmt v1.0.0/go.mod h1:FmTxx713R45J21kbH5JOmKGaaCap3fJPA9Yl2n4Ch7U=
+webtyp.com/input v0.0.6 h1:0zxdBrumT0+uXojDiKm1BMAqwS0mukpxotE/tBYQVYw=
+webtyp.com/input v0.0.6/go.mod h1:p4fCMgFPonW2tyzb7XSlezjm46vgZPZoETQjZxfUrY0=
+webtyp.com/model v0.1.8 h1:E8btSBmISbH1UHEUEmbrxCRWcX8zv08VvdRgWSAq894=
+webtyp.com/model v0.1.8/go.mod h1:OkyYeE3GOG8eAQGhd9wVsORAhr+xYj3q8avpoGXG25c=
+webtyp.com/widget v0.6.24 h1:af6ZhqQHPpiVW4tjUCmjmme8QO+ziOu2kT3WhI0ZxMg=
+webtyp.com/widget v0.6.24/go.mod h1:JLWQbjib77cOUmeNhyUJTxec6A4tJRqauzDJM0rki6A=
