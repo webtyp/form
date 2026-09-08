@@ -33,7 +33,7 @@ type Form struct {
 	locked             *dom.SignalBool                  // Whole-form read-only gate (see SetLocked)
 	focused            string                           // id Focus() last targeted (see FocusedFieldID)
 	baseline           []string                         // last loaded/reset value per input — see IsDirty
-	showFields         []fmt.KeyValue                  // PK field names opted back in via ShowField — see New
+	showFields         []fmt.KeyValue                   // PK field names opted back in via ShowField — see New
 	hiddenPKIndices    []int                            // schema indices of PK fields New skipped — see sync.go
 }
 
@@ -250,8 +250,8 @@ func hasShowField(showFields []fmt.KeyValue, name string) bool {
 // Returns an error if any exported field has no matching registered input.
 func New(parentID string, data model.Fielder, idGen model.IDGenerator, opts ...Option) (*Form, error) {
 	if idGen == nil {
-		return nil, fmt.Errf("form.New: idGen is required (got nil model.IDGenerator) — pass "+
-			"unixid.NewUnixID() at your composition root, or a test double in tests; form must "+
+		return nil, fmt.Errf("form.New: idGen is required (got nil model.IDGenerator) — pass " +
+			"unixid.NewUnixID() at your composition root, or a test double in tests; form must " +
 			"never construct its own generator (see model.IDGenerator's doc comment)")
 	}
 	schema := data.Schema()

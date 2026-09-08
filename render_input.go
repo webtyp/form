@@ -92,35 +92,45 @@ func (fc *fieldComponent) Render() *dom.Element {
 		BindStateFunc(widget.Invalid, func() bool { return fc.err.Get() != "" }).
 		BindStateFunc(widget.Locked, fc.isDisabledOrLocked)
 
+	var control *dom.Element
+	var extra *dom.Element
+
+	if r, ok := fc.Input.(Renderer); ok {
+		control = r.RenderInput(fc.value, func(v string) {
+			fc.value.Set(v)
+			fc.validate(v)
+		})
+	} else {
+		htmlName := fc.Input.HTMLName()
+		switch htmlName {
+		case "radio":
+			control = fc.buildRadio()
+		case "select":
+			control = fc.buildSelect()
+		case "datalist":
+			control, extra = fc.buildDatalist()
+		default:
+			control = fc.buildInput()
+		}
+	}
+
 	// Field label. Rendered structurally for every titled field so a global form
 	// skin (e.g. components/fieldset) can present it as a chip/legend; `for` ties
 	// it to the input for click-to-focus. Form ships no styling for it — the look
 	// is the consumer's skin.
-	if lbl := fc.labelText(); lbl != "" {
+	if lbl := fc.labelText(); lbl != "" && control != nil {
 		container.Child(dom.NewElement("label").
-			Attr("for", fc.Input.GetID()).
+			For(control).
 			Class(widget.NameField.Class(widget.PartLabel).String()).
 			Attr("title", lbl). // the untruncated text stays reachable
 			Text(fmt.Convert(lbl).Truncate(labelChars).String()))
 	}
 
-	if r, ok := fc.Input.(Renderer); ok {
-		container.Child(r.RenderInput(fc.value, func(v string) {
-			fc.value.Set(v)
-			fc.validate(v)
-		}))
-	} else {
-		htmlName := fc.Input.HTMLName()
-		switch htmlName {
-		case "radio":
-			fc.renderRadio(container)
-		case "select":
-			fc.renderSelect(container)
-		case "datalist":
-			fc.renderDatalist(container)
-		default:
-			fc.renderInput(container)
-		}
+	if control != nil {
+		container.Child(control)
+	}
+	if extra != nil {
+		container.Child(extra)
 	}
 
 	errSpan := dom.NewElement("span").
@@ -133,7 +143,7 @@ func (fc *fieldComponent) Render() *dom.Element {
 	return container
 }
 
-func (fc *fieldComponent) renderInput(container *dom.Element) {
+func (fc *fieldComponent) buildInput() *dom.Element {
 	tag := "input"
 	htmlName := fc.Input.HTMLName()
 	if htmlName == "textarea" {
@@ -171,12 +181,12 @@ func (fc *fieldComponent) renderInput(container *dom.Element) {
 	}
 
 	applyCommonAttrs(el, fc)
-	container.Child(el)
+	return el
 }
 
-func (fc *fieldComponent) renderSelect(container *dom.Element) {
+func (fc *fieldComponent) buildSelect() *dom.Element {
 	el := dom.NewElement("select").
-		ID(fc.Input.HandlerName()).
+		ID(fc.Input.GetID()).
 		Class(widget.NameField.Class(widget.PartInput).String()).
 		Attr("name", fc.Input.FieldName())
 
@@ -205,19 +215,17 @@ func (fc *fieldComponent) renderSelect(container *dom.Element) {
 		}
 		el.Child(option)
 	}
-	container.Child(el)
+	return el
 }
 
-func (fc *fieldComponent) renderRadio(container *dom.Element) {
-	group := dom.NewElement("div").Class(widget.NameField.Class(widget.PartRadioGroup).String())
+func (fc *fieldComponent) buildRadio() *dom.Element {
+	group := dom.NewElement("div").
+		ID(fc.Input.GetID()).
+		Class(widget.NameField.Class(widget.PartRadioGroup).String())
 	val := fc.value.Get()
 	for _, opt := range fc.Input.GetOptions() {
-		optID := fc.Input.HandlerName() + "." + opt.Key
-		label := dom.NewElement("label")
-
 		radio := dom.NewElement("input").
 			Attr("type", "radio").
-			ID(optID).
 			Attr("name", fc.Input.FieldName()).
 			Attr("value", opt.Key)
 
@@ -241,14 +249,15 @@ func (fc *fieldComponent) renderRadio(container *dom.Element) {
 			}
 		})
 
+		label := dom.NewElement("label").For(radio)
 		label.Child(radio)
 		label.Child(dom.NewElement("span").Text(opt.Value))
 		group.Child(label)
 	}
-	container.Child(group)
+	return group
 }
 
-func (fc *fieldComponent) renderDatalist(container *dom.Element) {
+func (fc *fieldComponent) buildDatalist() (*dom.Element, *dom.Element) {
 	listID := fc.Input.GetID() + "-list"
 
 	el := dom.NewElement("input").
@@ -270,13 +279,13 @@ func (fc *fieldComponent) renderDatalist(container *dom.Element) {
 	}
 
 	applyCommonAttrs(el, fc)
-	container.Child(el)
 
+	// dom exposes (*Element).For for for=, but nothing equivalent for list= / aria-describedby / aria-labelledby yet.
 	datalist := dom.NewElement("datalist").ID(listID)
 	for _, opt := range fc.Input.GetOptions() {
 		datalist.Child(dom.NewElement("option").Attr("value", opt.Key).Text(opt.Value))
 	}
-	container.Child(datalist)
+	return el, datalist
 }
 
 func applyCommonAttrs(el *dom.Element, fc *fieldComponent) {

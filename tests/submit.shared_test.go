@@ -1,10 +1,10 @@
 package form_test
 
 import (
+	"testing"
 	"webtyp.com/form"
 	"webtyp.com/input"
 	"webtyp.com/model"
-	"testing"
 )
 
 type submitStruct struct {

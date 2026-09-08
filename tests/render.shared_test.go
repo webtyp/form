@@ -3,10 +3,10 @@ package form_test
 import "webtyp.com/model"
 
 import (
-	"webtyp.com/form"
-	"webtyp.com/input"
 	"strings"
 	"testing"
+	"webtyp.com/form"
+	"webtyp.com/input"
 )
 
 type renderStruct struct {
@@ -36,14 +36,13 @@ func runRenderTests(t *testing.T) {
 		}
 	})
 
-	t.Run("TestRender_SubmitButtonHasID", func(t *testing.T) {
+	t.Run("TestRender_SubmitButtonRendered", func(t *testing.T) {
 		s := &renderStruct{}
 		f, _ := form.New("app", s, &testIDGen{})
 		html := f.String()
 
-		expectedID := `id='app.form.submit'`
-		if !strings.Contains(html, expectedID) {
-			t.Errorf("Expected submit button ID not found in HTML: %s", html)
+		if !strings.Contains(html, clsFieldSubmit) || !strings.Contains(html, "type='submit'") {
+			t.Errorf("Expected submit button not found in HTML: %s", html)
 		}
 	})
 
@@ -59,6 +58,32 @@ func runRenderTests(t *testing.T) {
 			}
 		} else {
 			t.Errorf("Input does not implement ErrorID()")
+		}
+	})
+
+	t.Run("TestLabelFollowsControlID", func(t *testing.T) {
+		s := &renderStruct{}
+		f, _ := form.New("app", s, &testIDGen{})
+		html := f.String()
+
+		idxInputID := strings.Index(html, "<input id='")
+		if idxInputID == -1 {
+			t.Fatalf("<input id=' not found in HTML: %s", html)
+		}
+		startID := idxInputID + len("<input id='")
+		endID := strings.Index(html[startID:], "'")
+		controlID := html[startID : startID+endID]
+
+		idxLabelFor := strings.Index(html, "for='")
+		if idxLabelFor == -1 {
+			t.Fatalf("for=' not found in HTML: %s", html)
+		}
+		startFor := idxLabelFor + len("for='")
+		endFor := strings.Index(html[startFor:], "'")
+		labelFor := html[startFor : startFor+endFor]
+
+		if labelFor != controlID {
+			t.Errorf("Expected label for='%s' to match control id='%s'", labelFor, controlID)
 		}
 	})
 }

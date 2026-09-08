@@ -43,8 +43,7 @@ func (f *Form) Render() *dom.Element {
 	if !f.noSubmit {
 		btn := dom.NewElement("button").
 			Attr("type", "submit").
-			Class(widget.NameField.Class(widget.PartSubmit).String()).
-			ID(f.id + ".submit")
+			Class(widget.NameField.Class(widget.PartSubmit).String())
 
 		btn.BindAttrBool("disabled", f.submitting)
 
