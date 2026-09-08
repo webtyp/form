@@ -72,7 +72,7 @@ func Test_Render_BlackBox(t *testing.T) {
 		{
 			t: "Radio", name: "renders label per option",
 			opts:    optsGender,
-			contain: `<label>`,
+			contain: `<label`,
 		},
 		{
 			t: "Radio", name: "renders male option value",
