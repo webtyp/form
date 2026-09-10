@@ -171,13 +171,13 @@ func (fc *fieldComponent) buildInput() *dom.Element {
 
 	// Two-way binding
 	el.Bind(fc.value)
-	el.On("input", func(e dom.Event) {
+	el.OnInput(func(e dom.Event) {
 		val := e.TargetValue()
 		fc.value.Set(val)
 		fc.validate(val)
 	})
 	if fc.onCommit != nil {
-		el.On("blur", func(dom.Event) { fc.onCommit() })
+		el.OnBlur(func(dom.Event) { fc.onCommit() })
 	}
 
 	applyCommonAttrs(el, fc)
@@ -199,7 +199,7 @@ func (fc *fieldComponent) buildSelect() *dom.Element {
 
 	// Two-way binding for select
 	el.Bind(fc.value)
-	el.On("change", func(e dom.Event) {
+	el.OnChange(func(e dom.Event) {
 		val := e.TargetValue()
 		fc.value.Set(val)
 		fc.validate(val)
@@ -239,7 +239,7 @@ func (fc *fieldComponent) buildRadio() *dom.Element {
 		})
 		radio.BindAttrBoolFunc("disabled", fc.isDisabledOrLocked)
 
-		radio.On("change", func(e dom.Event) {
+		radio.OnChange(func(e dom.Event) {
 			if e.TargetChecked() {
 				fc.value.Set(opt.Key)
 				fc.validate(opt.Key)
@@ -269,13 +269,13 @@ func (fc *fieldComponent) buildDatalist() (*dom.Element, *dom.Element) {
 
 	// Two-way binding
 	el.Bind(fc.value)
-	el.On("input", func(e dom.Event) {
+	el.OnInput(func(e dom.Event) {
 		val := e.TargetValue()
 		fc.value.Set(val)
 		fc.validate(val)
 	})
 	if fc.onCommit != nil {
-		el.On("blur", func(dom.Event) { fc.onCommit() })
+		el.OnBlur(func(dom.Event) { fc.onCommit() })
 	}
 
 	applyCommonAttrs(el, fc)

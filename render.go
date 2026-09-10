@@ -70,7 +70,7 @@ func (f *Form) Render() *dom.Element {
 	}
 
 	// Bind submit event
-	el.On("submit", func(e dom.Event) {
+	el.OnSubmit(func(e dom.Event) {
 		e.PreventDefault()
 		f.Submit()
 	})
