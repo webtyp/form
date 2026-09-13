@@ -7,7 +7,7 @@ require (
 	webtyp.com/fmt v1.0.0
 	webtyp.com/input v0.0.6
 	webtyp.com/model v0.1.9
-	webtyp.com/widget v0.6.29
+	webtyp.com/widget v0.6.30
 )
 
 // widget.PartSubmit (submit button styling hook) — not published yet.
@@ -17,5 +17,3 @@ require (
 // aren't tagged yet. Remove once they publish and `go get
 // webtyp.com/input@latest webtyp.com/widget@latest`.
 replace webtyp.com/input => ../input
-
-replace webtyp.com/widget => ../widget
