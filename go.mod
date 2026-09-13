@@ -7,7 +7,7 @@ require (
 	webtyp.com/fmt v1.0.0
 	webtyp.com/input v0.0.9
 	webtyp.com/model v0.1.9
-	webtyp.com/widget v0.6.30
+	webtyp.com/widget v0.6.31
 )
 
 // widget.PartSubmit (submit button styling hook) — not published yet.
