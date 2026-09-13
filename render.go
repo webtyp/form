@@ -11,6 +11,20 @@ func (f *Form) SetSSR(enabled bool) *Form {
 	return f
 }
 
+// SetAction points the form's native submit at a specific endpoint, instead of
+// the "/"+structName default New derives from the bound model.
+//
+// It only shows up in SSR mode (see Render), and that is exactly when it
+// matters: a server-rendered form is submittable by the browser BEFORE any
+// wasm has loaded, so its action has to be the real endpoint or that early
+// Enter keypress lands on a 404. A model's name is almost never the route
+// that accepts it — auth's RUTLoginData posts to "/session", not to
+// "/rut_login_data".
+func (f *Form) SetAction(path string) *Form {
+	f.action = path
+	return f
+}
+
 // String serializes the form to its HTML string representation.
 func (f *Form) String() string {
 	return f.Render().String()

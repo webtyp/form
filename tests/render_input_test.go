@@ -175,3 +175,23 @@ type rc struct {
 	opts    []fmt.KeyValue
 	contain string
 }
+
+// TestSetAction_SSRFormPostsToTheRealEndpoint: un formulario renderizado en el
+// servidor es enviable por el navegador ANTES de que exista wasm, así que su
+// action tiene que ser el endpoint real. El default ("/"+nombre del modelo)
+// casi nunca lo es.
+func TestSetAction_SSRFormPostsToTheRealEndpoint(t *testing.T) {
+	f, err := form.New("app", &kindFixture{inp: input.Text()}, &testIDGen{})
+	if err != nil {
+		t.Fatalf("form.New: %v", err)
+	}
+	f.SetSSR(true).SetAction("/session")
+
+	html := f.String()
+	if !fmt.Contains(html, `action='/session'`) {
+		t.Errorf("SSR form should post to the endpoint set with SetAction\ngot: %s", html)
+	}
+	if fmt.Contains(html, "action='/tfield'") || fmt.Contains(html, "action='/kindFixture'") {
+		t.Errorf("SetAction must override the model-derived default\ngot: %s", html)
+	}
+}

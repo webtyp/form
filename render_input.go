@@ -67,6 +67,15 @@ type Renderer interface {
 }
 
 func (fc *fieldComponent) validate(val string) {
+	// Mirrors Form.Validate()'s own skip check (validate.go) — that one already
+	// gates submission; this one gates the live per-keystroke error display.
+	// Before this, a field with SetSkipValidation(true) still submitted fine
+	// but showed a red error while typing, defeating the whole point of
+	// skipping validation for a field that must not reveal its own format.
+	if skipper, ok := fc.Input.(interface{ GetSkipValidation() bool }); ok && skipper.GetSkipValidation() {
+		fc.err.Set("")
+		return
+	}
 	if err := fc.Input.Validate(val); err != nil {
 		fc.err.Set(err.Error())
 	} else {
@@ -110,7 +119,7 @@ func (fc *fieldComponent) Render() *dom.Element {
 		case "datalist":
 			control, extra = fc.buildDatalist()
 		default:
-			control = fc.buildInput()
+			control, extra = fc.buildInput()
 		}
 	}
 
@@ -143,7 +152,7 @@ func (fc *fieldComponent) Render() *dom.Element {
 	return container
 }
 
-func (fc *fieldComponent) buildInput() *dom.Element {
+func (fc *fieldComponent) buildInput() (*dom.Element, *dom.Element) {
 	tag := "input"
 	htmlName := fc.Input.HTMLName()
 	if htmlName == "textarea" {
@@ -155,8 +164,14 @@ func (fc *fieldComponent) buildInput() *dom.Element {
 		Class(widget.NameField.Class(widget.PartInput).String()).
 		Attr("name", fc.Input.FieldName())
 
+	var reveal *dom.Element
 	if tag == "input" {
-		el.Attr("type", htmlName)
+		masker, isMasked := fc.Input.(interface{ IsMasked() bool })
+		if isMasked && masker.IsMasked() {
+			reveal = fc.wireMaskToggle(el)
+		} else {
+			el.Attr("type", htmlName)
+		}
 	}
 
 	// Initial value for SSR
@@ -181,7 +196,59 @@ func (fc *fieldComponent) buildInput() *dom.Element {
 	}
 
 	applyCommonAttrs(el, fc)
-	return el
+	return el, reveal
+}
+
+// wireMaskToggle binds el's type attribute to a revealed/hidden signal
+// (instead of the fixed "password" a masked field would otherwise get) and
+// returns the button that flips it — the show/hide toggle NIST SP 800-63B
+// §5.1.1.2 recommends, on by default for every masked field (see
+// docs/PLAN.md in veltylabs/mjosefa-cms for why this replaced an app-local
+// button built with syscall/js and a class no stylesheet defined).
+func (fc *fieldComponent) wireMaskToggle(el *dom.Element) *dom.Element {
+	revealed := dom.NewBool(false)
+	el.BindAttrFunc("type", func() string {
+		if revealed.Get() {
+			return "text"
+		}
+		return "password"
+	})
+	return dom.NewElement("button").
+		Attr("type", "button"). // never submit — revealing must not send the form
+		ID(fc.Input.GetID() + ".reveal").
+		Class(widget.NameField.Class(widget.PartReveal).String()).
+		BindState(widget.Selected, revealed).
+		BindAttrFunc("aria-label", func() string {
+			if revealed.Get() {
+				return "Ocultar"
+			}
+			return "Mostrar"
+		}).
+		BindAttrFunc("aria-pressed", func() string {
+			if revealed.Get() {
+				return "true"
+			}
+			return "false"
+		}).
+		OnClick(func(dom.Event) { revealed.Set(!revealed.Get()) }).
+		Child(eyeGlyph())
+}
+
+// eyeGlyph is a real inline SVG (fill="currentColor", so components/fieldset's
+// Glyph() colors it through the cascade like any other text) — never an emoji:
+// a "👁" renders a different bitmap per OS/font and ignores color entirely.
+// One shape for both states; components/fieldset's When(Selected, …) is what
+// changes how it reads as revealed vs hidden, not a second icon to keep in
+// sync.
+func eyeGlyph() *dom.Element {
+	return dom.NewElement("svg").
+		Attr("viewBox", "0 0 24 24").
+		Attr("width", "18").
+		Attr("height", "18").
+		Attr("aria-hidden", "true").
+		Attr("fill", "currentColor").
+		Child(dom.NewElement("path").
+			Attr("d", "M12 5C5 5 1 12 1 12s4 7 11 7 11-7 11-7-4-7-11-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"))
 }
 
 func (fc *fieldComponent) buildSelect() *dom.Element {
