@@ -15,16 +15,19 @@
 
 Input constructors take zero arguments and act as prototypes. `Clone(parentID, name)` creates positioned copies that preserve all configuration (Permitted rules, Options, Attributes).
 
-### 2. State & Binding (`form.go`, `sync.go`)
+### 2. State & Binding (`form.go`, `sync.go`, `load.go`)
 - **Fielder-based**: `New()` uses `data.Schema()` and `data.Pointers()`.
 - **Pointer-based sync**: `SyncValues(data)` uses `data.Pointers()` to write back values without reflection.
 - Supports `model.FieldText`, `model.FieldInt`, `model.FieldFloat`, `model.FieldBool`.
 - **Identity is injected, never constructed**: hidden text-PK auto-assignment on submit uses the `model.IDGenerator` passed to `New()` — form never builds its own generator (same principle as `model.IDGenerator`'s doc comment and `user.Config.IDs`).
+- **The hidden PK is form state**: `LoadValues` remembers each hidden PK's id, `Reset` clears it, `SyncValues` writes it — the target's own PK is never read.
 
 ### 3. Validation (`validate.go`, `validate_struct.go`)
 - `Form.Validate()` iterates `f.Inputs`, calls `inp.Validate(GetSelectedValue())`.
 - Skips fields with `SkipValidation` flag.
-- Returns first error encountered.
+- Returns first error encountered — and paints every failing field that holds
+  a value into its own error signal, so a loaded-but-never-typed invalid
+  value is visible instead of a silent failure.
 - `ValidateData(action, data)` provides server-side or isomorphic validation via `crudp.DataValidator`.
 
 ### 4. Rendering (`render.go`)

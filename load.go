@@ -38,5 +38,14 @@ func (f *Form) LoadValues(data model.Fielder) error {
 		}
 	}
 
+	// The hidden PK has no Input and never reaches the loop above — remember
+	// it here, or SyncValues would have no identity to write (see sync.go).
+	// A nil record reset the whole form at the top; there is nothing to keep.
+	for k, idx := range f.hiddenPKIndices {
+		if idx >= 0 && idx < len(values) {
+			f.loadedPK[k] = fmt.Convert(values[idx]).String()
+		}
+	}
+
 	return nil
 }

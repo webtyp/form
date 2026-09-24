@@ -23,11 +23,24 @@ For each field in `data.Schema()`:
 - Pulls values from reactive signals.
 - Calls `inp.Validate(val)` (promoted from `model.Kind`).
 - Returns the **first** error encountered.
+- Paints every failing field that holds a value into its own error signal
+  (an empty failing field stays unpainted — its live validation paints it
+  when the user types); passing fields are cleared.
+
+## `(*Form).LoadValues(data model.Fielder)` — Load Detail
+
+Populates every input from data, the inverse of `SyncValues`. A nil record
+resets the form (the "new record" case). Loading also remembers each hidden
+PK's id as form state, and clears stale validation errors.
 
 ## `(*Form).SyncValues(data model.Fielder)` — Binding Detail
 
 Synchronizes input values back to the struct pointers provided by `data.Pointers()`.
 Supports `model.FieldText`, `model.FieldInt`, `model.FieldFloat`, and `model.FieldBool`.
+The hidden PK is written from the id `LoadValues` remembered (`Reset` cleared
+it); the target's own PK is never read. An empty remembered text PK mints a
+new id (kept across retries until `Reset`); an empty int PK is zeroed for the
+DB to auto-increment.
 
 ## `(*Form).ValidateData(action byte, data model.Fielder)` — Server-side Validation
 

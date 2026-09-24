@@ -81,24 +81,6 @@ func TestSyncValuesAssignsHiddenPK(t *testing.T) {
 	}
 }
 
-// TestSyncValuesPreservesExistingHiddenPK: an EXISTING record's id must
-// survive SyncValues untouched — only an EMPTY hidden PK gets a new one.
-func TestSyncValuesPreservesExistingHiddenPK(t *testing.T) {
-	u := &testUser{id: "existing-id", name: "Old"}
-	f, err := form.New("p", u, &testIDGen{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if err := f.SyncValues(u); err != nil {
-		t.Fatal(err)
-	}
-
-	if u.id != "existing-id" {
-		t.Errorf("Expected id to stay 'existing-id', got %q", u.id)
-	}
-}
-
 type autoUser struct {
 	id   int64
 	name string

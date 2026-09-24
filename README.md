@@ -204,9 +204,9 @@ Form `id` = `parentID + "." + name`, where the name comes from the optional
 | `Render() *dom.Element` | **WASM** — reactive DOM tree (`dom.ViewRenderer`) |
 | `SetSSR(bool) *Form` | SSR mode: adds `method`/`action` attributes |
 | `OnSubmit(func(model.Fielder, func(error))) *Form` | WASM submit callback |
-| `Validate() error` | Validates all inputs, returns first error |
-| `LoadValues(model.Fielder) error` | Populates every input from data, the inverse of SyncValues |
-| `SyncValues(model.Fielder) error` | Copies input values back into the data struct |
+| `Validate() error` | Validates all inputs, returns first error — and paints every failing field that holds a value |
+| `LoadValues(model.Fielder) error` | Populates every input from data, the inverse of SyncValues — and remembers each hidden PK's id |
+| `SyncValues(model.Fielder) error` | Copies input values back into the data struct — the hidden PK comes from the remembered id, never the target |
 | `ValidateData(byte, model.Fielder) error` | Server-side validation (crudp.DataValidator) |
 | `Input(fieldName string) input.Input` | Returns the input for a field name |
 | `SetOptions(fieldName, ...fmt.KeyValue) *Form` | Options for select/radio/datalist |

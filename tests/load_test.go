@@ -189,6 +189,27 @@ func TestLoadValues(t *testing.T) {
 	}
 }
 
+func TestLoadValuesHiddenPKRoundTrip(t *testing.T) {
+	// The hidden PK is form state: LoadValues remembers it, SyncValues writes
+	// it — even though no Input ever renders it. Without this, the round-trip
+	// covers only visible fields and the lost id goes unnoticed.
+	u := &pkTextRecord{}
+	f, err := form.New("parent-id", u, &testIDGen{})
+	if err != nil {
+		t.Fatalf("unexpected error creating form: %v", err)
+	}
+	if err := f.LoadValues(&pkTextRecord{Id: "k9", Name: "Kilo"}); err != nil {
+		t.Fatalf("unexpected error loading values: %v", err)
+	}
+	target := &pkTextRecord{Id: "other"}
+	if err := f.SyncValues(target); err != nil {
+		t.Fatalf("unexpected error syncing values: %v", err)
+	}
+	if target.Id != "k9" || target.Name != "Kilo" {
+		t.Errorf("expected the loaded hidden PK 'k9' and name 'Kilo', got %q and %q", target.Id, target.Name)
+	}
+}
+
 func TestNewFailures(t *testing.T) {
 	// 7. New con un modelo sin widgets falla: un Fielder cuyos Field.Type sean todos model.Text()/model.Int() → New devuelve err != nil (no un form vacío).
 	noWidgets := &NoWidgetsModel{Name: "Test", Price: 10}

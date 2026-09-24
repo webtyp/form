@@ -45,24 +45,20 @@ func (f *Form) SyncValues(data model.Fielder) error {
 		writeField(ptr, field.Type.Storage(), values)
 	}
 
-	// A hidden PK (New skipped it — see that function's comment) has no
-	// Input and so is untouched by the loop above. An EXISTING record
-	// already carries its real id here (Presenter.Select loaded it before
-	// the form ever rendered); only a brand-new record's id is still the
-	// zero value at this point, and it must not reach the backend that
-	// way — model.ValidateFields (deeper in orm.Create) rejects an empty
-	// PK outright. Only text PKs are assigned here: an int PK is normally
-	// auto-increment, the DB's job (see orm.Create), not this form's.
-	for _, idx := range f.hiddenPKIndices {
-		field := schema[idx]
-		if field.Type.Storage() != model.FieldText {
+	// The hidden PK is form state: LoadValues remembered it, Reset cleared it.
+	// The target's own PK is never read — the target may be a scratch record
+	// shared across edits (crudview syncs into Presenter.Record()), and trusting
+	// it wrote edits onto whichever record was synced last.
+	for k, idx := range f.hiddenPKIndices {
+		ptr, st := pointers[idx], schema[idx].Type.Storage()
+		if f.loadedPK[k] == "" && st == model.FieldText {
+			f.loadedPK[k] = f.idGen.NewID() // a new record keeps this id across retries until Reset
+		}
+		if f.loadedPK[k] == "" {
+			zeroField(ptr, st) // int PK of a new record: auto-increment is the DB's job
 			continue
 		}
-		ptr := pointers[idx]
-		if val, _ := model.ReadStringPtr(ptr); val != "" {
-			continue
-		}
-		writeField(ptr, model.FieldText, []string{f.idGen.NewID()})
+		writeField(ptr, st, []string{f.loadedPK[k]})
 	}
 
 	return nil

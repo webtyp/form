@@ -35,6 +35,7 @@ type Form struct {
 	baseline           []string                         // last loaded/reset value per input — see IsDirty
 	showFields         []fmt.KeyValue                   // PK field names opted back in via ShowField — see New
 	hiddenPKIndices    []int                            // schema indices of PK fields New skipped — see sync.go
+	loadedPK           []string                         // id LoadValues remembered per hidden PK, in hiddenPKIndices order — see sync.go
 }
 
 // Option configures New. The only kind today is ShowField.
@@ -335,6 +336,10 @@ func New(parentID string, data model.Fielder, idGen model.IDGenerator, opts ...O
 		f.fieldIndices = append(f.fieldIndices, i)
 	}
 
+	// One remembered id per hidden PK, in hiddenPKIndices order — LoadValues
+	// fills it, reset clears it, SyncValues writes it (see sync.go).
+	f.loadedPK = make([]string, len(f.hiddenPKIndices))
+
 	if len(f.Inputs) == 0 {
 		return nil, fmt.Errf("form.New: %s has no renderable field — every Field.Type is a "+
 			"plain model.Kind, not a form input.Input. Declare the widget in the model "+
@@ -407,8 +412,8 @@ func (f *Form) resolveSubmitLabel() string {
 }
 
 func (f *Form) reset() {
+	// Reset signals
 	for i, inp := range f.Inputs {
-		// Reset signals
 		f.valueSignals[i].Set("")
 		f.errorSignals[i].Set("")
 		f.baseline[i] = "" // a reset form is pristine — see IsDirty
@@ -417,6 +422,12 @@ func (f *Form) reset() {
 		if setter, ok := inp.(interface{ SetValues(...string) }); ok {
 			setter.SetValues("")
 		}
+	}
+	// A reset form holds no record: the remembered hidden-PK ids go too, so
+	// the next SyncValues mints fresh ones instead of re-shipping the last
+	// record's (see sync.go).
+	for k := range f.loadedPK {
+		f.loadedPK[k] = ""
 	}
 	// A full reset also drops any pending focus intent — a host cancelling a
 	// draft (see crudview.undoAction) must leave nothing tracked as focused.
