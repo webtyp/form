@@ -328,7 +328,7 @@ func New(parentID string, data model.Fielder, idGen model.IDGenerator, opts ...O
 		// called AFTER New() returns (chainable, like HideSubmit) — capturing the
 		// field directly here would freeze it at nil since registration happens
 		// later. The closure re-reads f.onFieldChange at commit time instead.
-		f.children = append(f.children, &fieldComponent{inp, vSig, eSig, f.locked, func() {
+		f.children = append(f.children, &fieldComponent{Input: inp, value: vSig, err: eSig, locked: f.locked, onCommit: func() {
 			if f.onFieldChange != nil {
 				f.onFieldChange()
 			}
@@ -369,6 +369,11 @@ func (f *Form) SetOptions(fieldName string, opts ...fmt.KeyValue) *Form {
 	if inp != nil {
 		if setter, ok := inp.(interface{ SetOptions(...fmt.KeyValue) }); ok {
 			setter.SetOptions(opts...)
+		}
+	}
+	for _, c := range f.children {
+		if fc, ok := c.(*fieldComponent); ok && fc.Input == inp {
+			fc.refreshOptions()
 		}
 	}
 	return f

@@ -209,7 +209,7 @@ Form `id` = `parentID + "." + name`, where the name comes from the optional
 | `SyncValues(model.Fielder) error` | Copies input values back into the data struct — the hidden PK comes from the remembered id, never the target |
 | `ValidateData(byte, model.Fielder) error` | Server-side validation (crudp.DataValidator) |
 | `Input(fieldName string) input.Input` | Returns the input for a field name |
-| `SetOptions(fieldName, ...fmt.KeyValue) *Form` | Options for select/radio/datalist |
+| `SetOptions(fieldName, ...fmt.KeyValue) *Form` | Options for select/radio/datalist; called after render (choices fetched async), it repaints the live control |
 | `SetValues(fieldName, ...string) *Form` | Sets a value programmatically |
 | `IsDirty() bool` | Reports whether any field's value differs from baseline |
 | `DirtyFields() []string` | Returns names of fields differing from baseline (nil if none) |

@@ -29,6 +29,33 @@ type fieldComponent struct {
 	// text/textarea/datalist, change for select/radio) — the auto-save hook set
 	// via Form.OnFieldChange. Nil when the form has none registered.
 	onCommit func()
+	// options holds the live choice nodes of a select, radio group or datalist,
+	// so Form.SetOptions after render repaints them: the choices usually come
+	// from a Caller whose answer arrives once the form is already on screen.
+	// Nil until a choice control is built.
+	options      *dom.SignalNodes
+	buildOptions func() []*dom.Element
+}
+
+// bindOptions writes the choices as el's children and binds them to a fresh,
+// empty signal that refreshOptions fills later. dom's idiom for seeded rows
+// (see datatable): the serializer emits the static children, and the first
+// Set replaces them wholesale in the live DOM.
+func (fc *fieldComponent) bindOptions(el *dom.Element, build func() []*dom.Element) {
+	for _, n := range build() {
+		el.Child(n)
+	}
+	fc.buildOptions = build
+	fc.options = dom.NewNodes()
+	el.BindChildren(fc.options)
+}
+
+// refreshOptions repaints the choice nodes from Input.GetOptions(). A no-op
+// before the control is built: the first render reads the options directly.
+func (fc *fieldComponent) refreshOptions() {
+	if fc.options != nil && fc.buildOptions != nil {
+		fc.options.Set(fc.buildOptions())
+	}
 }
 
 // isDisabledOrLocked combines the field's own static disabled flag with the
@@ -215,7 +242,7 @@ func (fc *fieldComponent) wireMaskToggle(el *dom.Element) *dom.Element {
 	})
 	return dom.NewElement("button").
 		Attr("type", "button"). // never submit — revealing must not send the form
-		ID(fc.Input.GetID() + ".reveal").
+		ID(fc.Input.GetID()+".reveal").
 		Class(widget.NameField.Class(widget.PartReveal).String()).
 		BindState(widget.Selected, revealed).
 		BindAttrFunc("aria-label", func() string {
@@ -262,8 +289,6 @@ func (fc *fieldComponent) buildSelect() *dom.Element {
 	}
 	el.BindAttrBoolFunc("disabled", fc.isDisabledOrLocked)
 
-	val := fc.value.Get()
-
 	// Two-way binding for select
 	el.Bind(fc.value)
 	el.OnChange(func(e dom.Event) {
@@ -275,13 +300,19 @@ func (fc *fieldComponent) buildSelect() *dom.Element {
 		}
 	})
 
-	for _, opt := range fc.Input.GetOptions() {
-		option := dom.NewElement("option").Attr("value", opt.Key).Text(opt.Value)
-		if val != "" && opt.Key == val {
-			option.Attr("selected", "")
+	fc.bindOptions(el, func() []*dom.Element {
+		val := fc.value.Get()
+		opts := fc.Input.GetOptions()
+		nodes := make([]*dom.Element, 0, len(opts))
+		for _, opt := range opts {
+			option := dom.NewElement("option").Attr("value", opt.Key).Text(opt.Value)
+			if val != "" && opt.Key == val {
+				option.Attr("selected", "")
+			}
+			nodes = append(nodes, option)
 		}
-		el.Child(option)
-	}
+		return nodes
+	})
 	return el
 }
 
@@ -289,38 +320,43 @@ func (fc *fieldComponent) buildRadio() *dom.Element {
 	group := dom.NewElement("div").
 		ID(fc.Input.GetID()).
 		Class(widget.NameField.Class(widget.PartRadioGroup).String())
-	val := fc.value.Get()
-	for _, opt := range fc.Input.GetOptions() {
-		radio := dom.NewElement("input").
-			Attr("type", "radio").
-			Attr("name", fc.Input.FieldName()).
-			Attr("value", opt.Key)
+	fc.bindOptions(group, func() []*dom.Element {
+		val := fc.value.Get()
+		opts := fc.Input.GetOptions()
+		nodes := make([]*dom.Element, 0, len(opts))
+		for _, opt := range opts {
+			radio := dom.NewElement("input").
+				Attr("type", "radio").
+				Attr("name", fc.Input.FieldName()).
+				Attr("value", opt.Key)
 
-		if val != "" && opt.Key == val {
-			radio.Attr("checked", "")
-		}
-
-		// Reactive checked state
-		radio.BindAttrBoolFunc("checked", func() bool {
-			return fc.value.Get() == opt.Key
-		})
-		radio.BindAttrBoolFunc("disabled", fc.isDisabledOrLocked)
-
-		radio.OnChange(func(e dom.Event) {
-			if e.TargetChecked() {
-				fc.value.Set(opt.Key)
-				fc.validate(opt.Key)
-				if fc.onCommit != nil {
-					fc.onCommit()
-				}
+			if val != "" && opt.Key == val {
+				radio.Attr("checked", "")
 			}
-		})
 
-		label := dom.NewElement("label").For(radio)
-		label.Child(radio)
-		label.Child(dom.NewElement("span").Text(opt.Value))
-		group.Child(label)
-	}
+			// Reactive checked state
+			radio.BindAttrBoolFunc("checked", func() bool {
+				return fc.value.Get() == opt.Key
+			})
+			radio.BindAttrBoolFunc("disabled", fc.isDisabledOrLocked)
+
+			radio.OnChange(func(e dom.Event) {
+				if e.TargetChecked() {
+					fc.value.Set(opt.Key)
+					fc.validate(opt.Key)
+					if fc.onCommit != nil {
+						fc.onCommit()
+					}
+				}
+			})
+
+			label := dom.NewElement("label").For(radio)
+			label.Child(radio)
+			label.Child(dom.NewElement("span").Text(opt.Value))
+			nodes = append(nodes, label)
+		}
+		return nodes
+	})
 	return group
 }
 
@@ -349,9 +385,14 @@ func (fc *fieldComponent) buildDatalist() (*dom.Element, *dom.Element) {
 
 	// dom exposes (*Element).For for for=, but nothing equivalent for list= / aria-describedby / aria-labelledby yet.
 	datalist := dom.NewElement("datalist").ID(listID)
-	for _, opt := range fc.Input.GetOptions() {
-		datalist.Child(dom.NewElement("option").Attr("value", opt.Key).Text(opt.Value))
-	}
+	fc.bindOptions(datalist, func() []*dom.Element {
+		opts := fc.Input.GetOptions()
+		nodes := make([]*dom.Element, 0, len(opts))
+		for _, opt := range opts {
+			nodes = append(nodes, dom.NewElement("option").Attr("value", opt.Key).Text(opt.Value))
+		}
+		return nodes
+	})
 	return el, datalist
 }
 
