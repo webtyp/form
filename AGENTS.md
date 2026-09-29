@@ -17,7 +17,7 @@ it can't catch becomes a `devMode` warning — never a silent failure.
 - **Docs are minimal "how" instructions, not long skills** — if a rule must be *remembered*, close it
   with types, not prose.
 
-(Ecosystem rationale: `webtyp/app/docs/CONSTRUCTION_HARNESS.md`.)
+(Ecosystem rationale: the [`api-design` skill](https://github.com/webtyp/devskills/blob/main/skills/api-design/SKILL.md).)
 
 ---
 
