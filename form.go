@@ -6,6 +6,7 @@ import (
 	"webtyp.com/dom"
 	"webtyp.com/fmt"
 	"webtyp.com/input"
+	"webtyp.com/widget"
 )
 
 // Form represents a form instance.
@@ -55,6 +56,12 @@ func ShowField(names ...string) Option {
 		}
 	}
 }
+
+// WidgetName implements widget.Widget identity for Form.
+func (f *Form) WidgetName() widget.Name { return widget.NameField }
+
+// WidgetKind implements widget.Widget identity for Form.
+func (f *Form) WidgetKind() widget.Kind { return widget.Form }
 
 // Children returns the form's input fields as dom components (O(1), zero-alloc).
 func (f *Form) Children() []dom.Component {

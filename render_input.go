@@ -141,6 +141,8 @@ func (fc *fieldComponent) Render() *dom.Element {
 		switch htmlName {
 		case "radio":
 			control = fc.buildRadio()
+		case "checkbox":
+			control = fc.buildCheckbox()
 		case "select":
 			control = fc.buildSelect()
 		case "datalist":
@@ -325,39 +327,177 @@ func (fc *fieldComponent) buildRadio() *dom.Element {
 		opts := fc.Input.GetOptions()
 		nodes := make([]*dom.Element, 0, len(opts))
 		for _, opt := range opts {
+			optKey := opt.Key
+			optVal := opt.Value
+
 			radio := dom.NewElement("input").
 				Attr("type", "radio").
+				Class(widget.NameField.Class(widget.PartRadioNative).String()).
 				Attr("name", fc.Input.FieldName()).
-				Attr("value", opt.Key)
+				Attr("value", optKey)
 
-			if val != "" && opt.Key == val {
+			if val != "" && optKey == val {
 				radio.Attr("checked", "")
 			}
 
 			// Reactive checked state
 			radio.BindAttrBoolFunc("checked", func() bool {
-				return fc.value.Get() == opt.Key
+				return fc.value.Get() == optKey
 			})
 			radio.BindAttrBoolFunc("disabled", fc.isDisabledOrLocked)
 
 			radio.OnChange(func(e dom.Event) {
 				if e.TargetChecked() {
-					fc.value.Set(opt.Key)
-					fc.validate(opt.Key)
+					fc.value.Set(optKey)
+					fc.validate(optKey)
 					if fc.onCommit != nil {
 						fc.onCommit()
 					}
 				}
 			})
 
-			label := dom.NewElement("label").For(radio)
+			label := dom.NewElement("label").
+				For(radio).
+				Class(widget.NameField.Class(widget.PartRadioOption).String()).
+				BindStateFunc(widget.Selected, func() bool {
+					return fc.value.Get() == optKey
+				})
+
 			label.Child(radio)
-			label.Child(dom.NewElement("span").Text(opt.Value))
+			label.Child(radioUncheckedGlyph())
+			label.Child(radioCheckedGlyph())
+			label.Child(dom.NewElement("span").Text(optVal))
 			nodes = append(nodes, label)
 		}
 		return nodes
 	})
 	return group
+}
+
+func radioUncheckedGlyph() *dom.Element {
+	return dom.NewElement("svg").
+		Class(widget.NameField.Class(widget.PartRadioUnchecked).String()).
+		Attr("viewBox", "0 0 24 24").
+		Attr("width", "18").
+		Attr("height", "18").
+		Attr("aria-hidden", "true").
+		Child(dom.NewElement("circle").
+			Attr("cx", "12").Attr("cy", "12").Attr("r", "8").
+			Attr("stroke", "var(--color-outline, #D1D1D6)").
+			Attr("stroke-width", "2").
+			Attr("fill", "none").
+			Attr("style", "fill: none;"))
+}
+
+func radioCheckedGlyph() *dom.Element {
+	return dom.NewElement("svg").
+		Class(widget.NameField.Class(widget.PartRadioChecked).String()).
+		Attr("viewBox", "0 0 24 24").
+		Attr("width", "18").
+		Attr("height", "18").
+		Attr("aria-hidden", "true").
+		Child(
+			dom.NewElement("circle").
+				Attr("cx", "12").Attr("cy", "12").Attr("r", "8").
+				Attr("stroke", "var(--color-primary, #654FF0)").
+				Attr("stroke-width", "2").
+				Attr("fill", "none").
+				Attr("style", "fill: none;"),
+			dom.NewElement("circle").
+				Attr("cx", "12").Attr("cy", "12").Attr("r", "4.5").
+				Attr("fill", "var(--color-primary, #654FF0)").
+				Attr("style", "fill: var(--color-primary, #654FF0);"),
+		)
+}
+
+func (fc *fieldComponent) buildCheckbox() *dom.Element {
+	val := fc.value.Get()
+	isChecked := val == "true" || val == "1" || val == "on"
+
+	chk := dom.NewElement("input").
+		Attr("type", "checkbox").
+		ID(fc.Input.GetID()).
+		Class(widget.NameField.Class(widget.PartCheckNative).String()).
+		Attr("name", fc.Input.FieldName())
+
+	if isChecked {
+		chk.Attr("checked", "")
+	}
+
+	chk.BindAttrBoolFunc("checked", func() bool {
+		v := fc.value.Get()
+		return v == "true" || v == "1" || v == "on"
+	})
+	chk.BindAttrBoolFunc("disabled", fc.isDisabledOrLocked)
+
+	chk.OnChange(func(e dom.Event) {
+		checked := e.TargetChecked()
+		v := "false"
+		if checked {
+			v = "true"
+		}
+		fc.value.Set(v)
+		fc.validate(v)
+		if fc.onCommit != nil {
+			fc.onCommit()
+		}
+	})
+
+	label := dom.NewElement("label").
+		For(chk).
+		Class(widget.NameField.Class(widget.PartCheckOption).String()).
+		BindStateFunc(widget.Selected, func() bool {
+			v := fc.value.Get()
+			return v == "true" || v == "1" || v == "on"
+		})
+
+	label.Child(chk)
+	label.Child(checkUncheckedGlyph())
+	label.Child(checkCheckedGlyph())
+	txt := fc.Input.GetPlaceholder()
+	if txt == "" {
+		txt = fc.labelText()
+	}
+	label.Child(dom.NewElement("span").Text(txt))
+	return label
+}
+
+func checkUncheckedGlyph() *dom.Element {
+	return dom.NewElement("svg").
+		Class(widget.NameField.Class(widget.PartCheckUnchecked).String()).
+		Attr("viewBox", "0 0 24 24").
+		Attr("width", "18").
+		Attr("height", "18").
+		Attr("aria-hidden", "true").
+		Child(dom.NewElement("rect").
+			Attr("x", "4").Attr("y", "4").Attr("width", "16").Attr("height", "16").Attr("rx", "3").
+			Attr("stroke", "var(--color-outline, #D1D1D6)").
+			Attr("stroke-width", "2").
+			Attr("fill", "none").
+			Attr("style", "fill: none;"))
+}
+
+func checkCheckedGlyph() *dom.Element {
+	return dom.NewElement("svg").
+		Class(widget.NameField.Class(widget.PartCheckChecked).String()).
+		Attr("viewBox", "0 0 24 24").
+		Attr("width", "18").
+		Attr("height", "18").
+		Attr("aria-hidden", "true").
+		Child(
+			dom.NewElement("rect").
+				Attr("x", "4").Attr("y", "4").Attr("width", "16").Attr("height", "16").Attr("rx", "3").
+				Attr("fill", "var(--color-primary, #654FF0)").
+				Attr("style", "fill: var(--color-primary, #654FF0);"),
+			dom.NewElement("path").
+				Attr("d", "M8 12l3 3 5-6").
+				Attr("stroke", "var(--color-on-primary, #ffffff)").
+				Attr("stroke-width", "2").
+				Attr("stroke-linecap", "round").
+				Attr("stroke-linejoin", "round").
+				Attr("fill", "none").
+				Attr("style", "fill: none;"),
+		)
 }
 
 func (fc *fieldComponent) buildDatalist() (*dom.Element, *dom.Element) {
