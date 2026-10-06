@@ -4,7 +4,7 @@ go 1.25.2
 
 require (
 	webtyp.com/css v0.4.28
-	webtyp.com/dom v0.13.18
+	webtyp.com/dom v0.13.20
 	webtyp.com/fmt v1.0.0
 	webtyp.com/input v0.0.11
 	webtyp.com/model v0.1.9
