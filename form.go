@@ -1,11 +1,11 @@
 package form
 
-import "webtyp.com/model"
-
 import (
 	"webtyp.com/dom"
 	"webtyp.com/fmt"
 	"webtyp.com/input"
+	"webtyp.com/lang"
+	"webtyp.com/model"
 	"webtyp.com/widget"
 )
 
@@ -249,6 +249,10 @@ func hasShowField(showFields []fmt.KeyValue, name string) bool {
 	return false
 }
 
+func humanize(name string) string {
+	return fmt.Convert(name).Replace("_", " ").String()
+}
+
 // New creates a new Form from a Fielder. idGen is REQUIRED — form never
 // constructs its own ID generator (see model.IDGenerator's doc comment); pass
 // unixid.NewUnixID() at your composition root, or a test double in tests.
@@ -331,15 +335,31 @@ func New(parentID string, data model.Fielder, idGen model.IDGenerator, opts ...O
 		f.valueSignals = append(f.valueSignals, vSig)
 		f.errorSignals = append(f.errorSignals, eSig)
 		f.baseline = append(f.baseline, val)
+		label := inp.GetTitle()
+		if label == "" || label == field.Name {
+			label = field.Label
+		}
+		if label == "" {
+			label = humanize(field.Name)
+		}
+
 		// A closure, not f.onFieldChange by value: OnFieldChange is meant to be
 		// called AFTER New() returns (chainable, like HideSubmit) — capturing the
 		// field directly here would freeze it at nil since registration happens
 		// later. The closure re-reads f.onFieldChange at commit time instead.
-		f.children = append(f.children, &fieldComponent{Input: inp, value: vSig, err: eSig, locked: f.locked, onCommit: func() {
-			if f.onFieldChange != nil {
-				f.onFieldChange()
-			}
-		}})
+		f.children = append(f.children, &fieldComponent{
+			Input:  inp,
+			value:  vSig,
+			err:    eSig,
+			label:  label,
+			help:   field.Help,
+			locked: f.locked,
+			onCommit: func() {
+				if f.onFieldChange != nil {
+					f.onFieldChange()
+				}
+			},
+		})
 		f.fieldIndices = append(f.fieldIndices, i)
 	}
 
@@ -420,7 +440,7 @@ func (f *Form) resolveSubmitLabel() string {
 	if label == "" {
 		label = "Submit"
 	}
-	return label
+	return lang.Translate(label).String()
 }
 
 func (f *Form) reset() {

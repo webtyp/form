@@ -4,6 +4,7 @@ import (
 	"webtyp.com/dom"
 	"webtyp.com/fmt"
 	"webtyp.com/input"
+	"webtyp.com/lang"
 	"webtyp.com/widget"
 )
 
@@ -22,6 +23,8 @@ type fieldComponent struct {
 	input.Input
 	value *dom.SignalString
 	err   *dom.SignalString
+	label string
+	help  string
 	// locked mirrors the owning Form's whole-form read-only gate (Form.SetLocked).
 	// Shared across every field, so toggling it re-locks/unlocks the entire form.
 	locked *dom.SignalBool
@@ -113,13 +116,7 @@ func (fc *fieldComponent) validate(val string) {
 // labelText picks the human label for the field's chip: the title first, then
 // the placeholder, then the raw field name as a last resort.
 func (fc *fieldComponent) labelText() string {
-	if t := fc.Input.GetTitle(); t != "" {
-		return t
-	}
-	if p := fc.Input.GetPlaceholder(); p != "" {
-		return p
-	}
-	return fc.Input.FieldName()
+	return lang.Translate(fc.label).String()
 }
 
 func (fc *fieldComponent) Render() *dom.Element {
@@ -168,18 +165,31 @@ func (fc *fieldComponent) Render() *dom.Element {
 			Text(fmt.Convert(lbl).Truncate(labelChars).String()))
 	}
 
-	if control != nil {
-		container.Child(control)
-	}
-	if extra != nil {
-		container.Child(extra)
-	}
-
 	errSpan := dom.NewElement("span").
 		ID(fc.Input.ErrorID()).
 		Class(widget.NameField.Class(widget.PartError).String()).
 		Attr("aria-live", "polite").
 		BindText(fc.err)
+
+	var helpEl *dom.Element
+	if fc.help != "" {
+		helpEl = dom.NewElement("small").
+			Class(widget.NameField.Class(widget.PartHelp).String()).
+			Text(lang.Translate(fc.help).String())
+		container.Child(helpEl)
+	}
+
+	if control != nil {
+		if helpEl != nil {
+			control.DescribedBy(helpEl, errSpan)
+		} else {
+			control.DescribedBy(errSpan)
+		}
+		container.Child(control)
+	}
+	if extra != nil {
+		container.Child(extra)
+	}
 
 	container.Child(errSpan)
 	return container
@@ -316,7 +326,7 @@ func (fc *fieldComponent) buildSelect() *dom.Element {
 		opts := fc.Input.GetOptions()
 		nodes := make([]*dom.Element, 0, len(opts))
 		for _, opt := range opts {
-			option := dom.NewElement("option").Attr("value", opt.Key).Text(opt.Value)
+			option := dom.NewElement("option").Attr("value", opt.Key).Text(lang.Translate(opt.Value).String())
 			if val != "" && opt.Key == val {
 				option.Attr("selected", "")
 			}
@@ -375,7 +385,7 @@ func (fc *fieldComponent) buildRadio() *dom.Element {
 			label.Child(radio)
 			label.Child(radioUncheckedGlyph())
 			label.Child(radioCheckedGlyph())
-			label.Child(dom.NewElement("span").Text(optVal))
+			label.Child(dom.NewElement("span").Text(lang.Translate(optVal).String()))
 			nodes = append(nodes, label)
 		}
 		return nodes
@@ -465,7 +475,7 @@ func (fc *fieldComponent) buildCheckbox() *dom.Element {
 	label.Child(checkCheckedGlyph())
 	txt := fc.Input.GetPlaceholder()
 	if txt == "" {
-		txt = fc.labelText()
+		txt = lang.Translate(fc.label).String()
 	}
 	label.Child(dom.NewElement("span").Text(txt))
 	return label
@@ -538,7 +548,7 @@ func (fc *fieldComponent) buildDatalist() (*dom.Element, *dom.Element) {
 		opts := fc.Input.GetOptions()
 		nodes := make([]*dom.Element, 0, len(opts))
 		for _, opt := range opts {
-			nodes = append(nodes, dom.NewElement("option").Attr("value", opt.Key).Text(opt.Value))
+			nodes = append(nodes, dom.NewElement("option").Attr("value", opt.Key).Text(lang.Translate(opt.Value).String()))
 		}
 		return nodes
 	})
@@ -569,10 +579,15 @@ func applyCommonAttrs(el *dom.Element, fc *fieldComponent) {
 
 // RenderInput is kept for backward compatibility and as a standalone helper
 func RenderInput(inp input.Input) *dom.Element {
+	lbl := inp.GetTitle()
+	if lbl == "" || lbl == inp.FieldName() {
+		lbl = fmt.Convert(inp.FieldName()).Replace("_", " ").String()
+	}
 	fc := &fieldComponent{
 		Input: inp,
 		value: dom.NewString(""),
 		err:   dom.NewString(""),
+		label: lbl,
 	}
 	// Note: this Render() returns the field wrapper div containing the input + error span.
 	return fc.Render()
