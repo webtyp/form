@@ -80,6 +80,7 @@ func (f *Form) Render() *dom.Element {
 		// like any other row.
 		el.Child(dom.NewElement("div").
 			Class(widget.NameField.Root().String()).
+			SetState(widget.SpanFull).
 			Child(btn))
 	}
 

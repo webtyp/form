@@ -128,6 +128,10 @@ func (fc *fieldComponent) Render() *dom.Element {
 		BindStateFunc(widget.Invalid, func() bool { return fc.err.Get() != "" }).
 		BindStateFunc(widget.Locked, fc.isDisabledOrLocked)
 
+	if spanner, ok := fc.Input.(interface{ IsFullWidth() bool }); ok && spanner.IsFullWidth() {
+		container.SetState(widget.SpanFull)
+	}
+
 	var control *dom.Element
 	var extra *dom.Element
 
@@ -192,6 +196,11 @@ func (fc *fieldComponent) buildInput() (*dom.Element, *dom.Element) {
 		ID(fc.Input.GetID()).
 		Class(widget.NameField.Class(widget.PartInput).String()).
 		Attr("name", fc.Input.FieldName())
+
+	if htmlName == "textarea" {
+		el.Class(widget.NameField.Class(widget.PartTextarea).String())
+		el.Attr("rows", "3")
+	}
 
 	var reveal *dom.Element
 	if tag == "input" {
@@ -378,11 +387,11 @@ func radioUncheckedGlyph() *dom.Element {
 	return dom.NewElement("svg").
 		Class(widget.NameField.Class(widget.PartRadioUnchecked).String()).
 		Attr("viewBox", "0 0 24 24").
-		Attr("width", "18").
-		Attr("height", "18").
+		Attr("width", "24").
+		Attr("height", "24").
 		Attr("aria-hidden", "true").
 		Child(dom.NewElement("circle").
-			Attr("cx", "12").Attr("cy", "12").Attr("r", "8").
+			Attr("cx", "12").Attr("cy", "12").Attr("r", "9").
 			Attr("stroke", "var(--color-outline, #D1D1D6)").
 			Attr("stroke-width", "2").
 			Attr("fill", "none").
@@ -393,18 +402,18 @@ func radioCheckedGlyph() *dom.Element {
 	return dom.NewElement("svg").
 		Class(widget.NameField.Class(widget.PartRadioChecked).String()).
 		Attr("viewBox", "0 0 24 24").
-		Attr("width", "18").
-		Attr("height", "18").
+		Attr("width", "24").
+		Attr("height", "24").
 		Attr("aria-hidden", "true").
 		Child(
 			dom.NewElement("circle").
-				Attr("cx", "12").Attr("cy", "12").Attr("r", "8").
+				Attr("cx", "12").Attr("cy", "12").Attr("r", "9").
 				Attr("stroke", "var(--color-primary, #654FF0)").
 				Attr("stroke-width", "2").
 				Attr("fill", "none").
 				Attr("style", "fill: none;"),
 			dom.NewElement("circle").
-				Attr("cx", "12").Attr("cy", "12").Attr("r", "4.5").
+				Attr("cx", "12").Attr("cy", "12").Attr("r", "5").
 				Attr("fill", "var(--color-primary, #654FF0)").
 				Attr("style", "fill: var(--color-primary, #654FF0);"),
 		)
@@ -466,11 +475,11 @@ func checkUncheckedGlyph() *dom.Element {
 	return dom.NewElement("svg").
 		Class(widget.NameField.Class(widget.PartCheckUnchecked).String()).
 		Attr("viewBox", "0 0 24 24").
-		Attr("width", "18").
-		Attr("height", "18").
+		Attr("width", "24").
+		Attr("height", "24").
 		Attr("aria-hidden", "true").
 		Child(dom.NewElement("rect").
-			Attr("x", "4").Attr("y", "4").Attr("width", "16").Attr("height", "16").Attr("rx", "3").
+			Attr("x", "3").Attr("y", "3").Attr("width", "18").Attr("height", "18").Attr("rx", "4").
 			Attr("stroke", "var(--color-outline, #D1D1D6)").
 			Attr("stroke-width", "2").
 			Attr("fill", "none").
@@ -481,18 +490,18 @@ func checkCheckedGlyph() *dom.Element {
 	return dom.NewElement("svg").
 		Class(widget.NameField.Class(widget.PartCheckChecked).String()).
 		Attr("viewBox", "0 0 24 24").
-		Attr("width", "18").
-		Attr("height", "18").
+		Attr("width", "24").
+		Attr("height", "24").
 		Attr("aria-hidden", "true").
 		Child(
 			dom.NewElement("rect").
-				Attr("x", "4").Attr("y", "4").Attr("width", "16").Attr("height", "16").Attr("rx", "3").
+				Attr("x", "3").Attr("y", "3").Attr("width", "18").Attr("height", "18").Attr("rx", "4").
 				Attr("fill", "var(--color-primary, #654FF0)").
 				Attr("style", "fill: var(--color-primary, #654FF0);"),
 			dom.NewElement("path").
-				Attr("d", "M8 12l3 3 5-6").
+				Attr("d", "M7 12.5l3.5 3.5 7-7").
 				Attr("stroke", "var(--color-on-primary, #ffffff)").
-				Attr("stroke-width", "2").
+				Attr("stroke-width", "2.5").
 				Attr("stroke-linecap", "round").
 				Attr("stroke-linejoin", "round").
 				Attr("fill", "none").

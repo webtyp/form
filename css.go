@@ -33,7 +33,6 @@ func RenderCSS() *css.Stylesheet {
 			style.Anchor(),
 			style.Stack(style.SpaceNone),
 			style.ChipSeat(style.EdgeTop),
-			style.PadInline(style.Space2),
 			style.KeepSize(),
 		).
 		// The form: the one place the inter-field rhythm lives. A gap on the
@@ -41,7 +40,12 @@ func RenderCSS() *css.Stylesheet {
 		// margin — does not double up at the first and last field against the
 		// card's own inset.
 		Part(widget.PartForm,
-			style.Stack(style.Space3),
+			style.FixedGrid(2, style.Space2),
+			style.PadInline(style.Space1),
+		).
+		On(css.Mobile, widget.PartForm,
+			style.FixedGrid(1, style.Space2),
+			style.PadInline(style.Space1),
 		).
 		// A legend, not a caption: OnEdge(EdgeTop) seats the chip flush against
 		// the field's ChipSeat padding and centres it — pinned to the shared
@@ -89,18 +93,19 @@ func RenderCSS() *css.Stylesheet {
 		// half its height inside the box, so the value needs room to clear it.
 		// At the chip's 20px height the hang is 10px and Space4's 16px still
 		// clears it.
-		// Panel, not Page: the legend chip is centred ON the input's top border
-		// line, and a borderless Page box gave it no line to sit on — the chip
-		// then read as floating a hair high, anchored to an edge the eye could
-		// not see. Panel's hairline ColorOutline frame is the same one the
-		// search bar's own input carries, so every text control in the app now
-		// shares one framed shape; the focus ring (amber, inset — see
-		// css/css.reset.go) lands just inside that frame instead of fighting it.
+		// Field: the legend chip is centred ON the input's top border line,
+		// and shares the clean white background of the list rows while keeping
+		// the hairline ColorOutline frame.
 		Part(widget.PartInput,
-			style.As(style.Panel),
+			style.As(style.Field),
 			style.Round(style.RadiusMd),
-			style.Pad(style.Space4),
+			style.PadInline(style.Space4),
+			style.PadEdge(style.EdgeTop, style.Space2),
 			style.ControlBox(),
+		).
+		Part(widget.PartTextarea,
+			style.PadEdge(style.EdgeTop, style.Space4),
+			style.PadInline(style.Space4),
 		).
 		// Bottom-right corner of the field, not top-right: PartError already
 		// owns the top-right corner (the two would overlap the moment a
@@ -118,25 +123,26 @@ func RenderCSS() *css.Stylesheet {
 			style.ControlBox(),
 		).
 		Part(widget.PartRadioGroup,
-			style.Row(style.Space3),
+			style.As(style.Field),
+			style.Round(style.RadiusMd),
 			style.ControlBox(),
-			style.CenterContent(),
-			style.PadEdge(style.EdgeTop, style.Space3),
+			style.Row(style.Space4),
+			style.PadInline(style.Space4),
+			style.PadEdge(style.EdgeTop, style.Space2),
 		).
 		Part(widget.PartRadioOption,
 			style.Row(style.Space2),
-			style.CenterContent(),
+			style.Grow(),
 			style.Interactive(style.Bare),
-			style.PadInline(style.Space2),
 		).
 		Part(widget.PartRadioNative,
 			style.VisuallyHidden(),
 		).
 		Part(widget.PartRadioUnchecked,
-			style.IconBox(style.IconSm),
+			style.IconBox(style.IconMd),
 		).
 		Part(widget.PartRadioChecked,
-			style.IconBox(style.IconSm),
+			style.IconBox(style.IconMd),
 			style.Hide(),
 		).
 		WhenWithin(widget.Selected, widget.PartRadioOption, widget.PartRadioUnchecked,
@@ -146,20 +152,21 @@ func RenderCSS() *css.Stylesheet {
 			style.Show(),
 		).
 		Part(widget.PartCheckOption,
-			style.Row(style.Space2),
-			style.CenterContent(),
+			style.As(style.Field),
+			style.Round(style.RadiusMd),
 			style.ControlBox(),
-			style.PadEdge(style.EdgeTop, style.Space3),
-			style.PadInline(style.Space2),
+			style.Row(style.Space2),
+			style.PadInline(style.Space4),
+			style.Interactive(style.Bare),
 		).
 		Part(widget.PartCheckNative,
 			style.VisuallyHidden(),
 		).
 		Part(widget.PartCheckUnchecked,
-			style.IconBox(style.IconSm),
+			style.IconBox(style.IconMd),
 		).
 		Part(widget.PartCheckChecked,
-			style.IconBox(style.IconSm),
+			style.IconBox(style.IconMd),
 			style.Hide(),
 		).
 		WhenWithin(widget.Selected, widget.PartCheckOption, widget.PartCheckUnchecked,
@@ -215,6 +222,14 @@ func RenderCSS() *css.Stylesheet {
 			style.As(style.Secondary),
 			style.Round(style.RadiusMd),
 		).
+		WhenWithin(widget.Locked, "", widget.PartRadioGroup,
+			style.As(style.Secondary),
+			style.Round(style.RadiusMd),
+		).
+		WhenWithin(widget.Locked, "", widget.PartCheckOption,
+			style.As(style.Secondary),
+			style.Round(style.RadiusMd),
+		).
 		// No filled state on the field itself: the red message in the corner is
 		// the signal. Painting the whole box danger buried the value.
 		When(widget.Invalid, widget.PartInput,
@@ -225,6 +240,9 @@ func RenderCSS() *css.Stylesheet {
 		// same element the state is written on, unlike WhenWithin above.
 		When(widget.Selected, widget.PartReveal,
 			style.Glyph(style.Primary),
+		).
+		When(widget.SpanFull, "",
+			style.SpanFull(),
 		).
 		Stylesheet()
 }

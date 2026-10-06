@@ -1,12 +1,12 @@
 package form_test
 
-import "webtyp.com/model"
-
 import (
 	"strings"
 	"testing"
+
 	"webtyp.com/form"
 	"webtyp.com/input"
+	"webtyp.com/model"
 )
 
 type renderStruct struct {
@@ -86,4 +86,32 @@ func runRenderTests(t *testing.T) {
 			t.Errorf("Expected label for='%s' to match control id='%s'", labelFor, controlID)
 		}
 	})
+
+	t.Run("TestRender_SpanFullOnTextareaAndSubmit", func(t *testing.T) {
+		s := &textareaStruct{}
+		f, _ := form.New("app", s, &testIDGen{})
+		html := f.String()
+
+		// Textarea container and submit wrapper should have data-span-full='true'
+		if !strings.Contains(html, `data-span-full='true'`) {
+			t.Errorf("Expected data-span-full='true' in HTML: %s", html)
+		}
+	})
 }
+
+type textareaStruct struct {
+	model.Fielder
+	Nombre string
+	Bio    string
+}
+
+func (s *textareaStruct) Schema() []model.Field {
+	return []model.Field{
+		{Name: "nombre", NotNull: true, Type: input.Text()},
+		{Name: "bio", Type: input.Textarea()},
+	}
+}
+
+func (s *textareaStruct) Pointers() []any { return []any{&s.Nombre, &s.Bio} }
+func (s *textareaStruct) Values() []any   { return []any{s.Nombre, s.Bio} }
+

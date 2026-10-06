@@ -46,6 +46,16 @@ func TestForm_RenderCSS(t *testing.T) {
 		}
 	}
 
+	// Verify that PartRadioGroup and PartCheckOption carry Panel frame styles
+	for _, partClass := range []string{
+		widget.NameField.Class(widget.PartRadioGroup).String(),
+		widget.NameField.Class(widget.PartCheckOption).String(),
+	} {
+		if !fmt.Contains(cssText, "."+partClass+" {") && !fmt.Contains(cssText, "."+partClass+"{") {
+			t.Errorf("missing rule for .%s", partClass)
+		}
+	}
+
 	// Also verify method on Form receiver
 	f := &form.Form{}
 	if f.WidgetName() != widget.NameField {
