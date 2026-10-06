@@ -2,8 +2,9 @@
 PLAN: "feat: form shows translated labels, help and options (Field.Label, Field.Help + lang)"
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 11869723703476135862
+PR: https://github.com/webtyp/form/pull/24
 ---
 
 > This plan is dispatched via the CodeJob workflow. See skill: agents-workflow.

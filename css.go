@@ -89,6 +89,11 @@ func RenderCSS() *css.Stylesheet {
 			style.Glyph(style.Danger),
 			style.FontSize(style.TextXs),
 		).
+		Part(widget.PartHelp,
+			style.Glyph(style.Inactive),
+			style.FontSize(style.TextXs),
+			style.PadInline(style.Space4),
+		).
 		// Space4, not Space2: the legend rides the input's top border and hangs
 		// half its height inside the box, so the value needs room to clear it.
 		// At the chip's 20px height the hang is 10px and Space4's 16px still
