@@ -8,7 +8,7 @@ require (
 	webtyp.com/fmt v1.0.0
 	webtyp.com/input v0.0.11
 	webtyp.com/model v0.1.9
-	webtyp.com/widget v0.6.35
+	webtyp.com/widget v0.6.36
 )
 
 require (
