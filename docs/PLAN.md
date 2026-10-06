@@ -1,5 +1,5 @@
 ---
-PLAN: "feat: form shows translated labels and options (Field.Label + lang)"
+PLAN: "feat: form shows translated labels, help and options (Field.Label, Field.Help + lang)"
 EXECUTOR: jules
 REVIEWER: none
 ---
@@ -10,7 +10,7 @@ REVIEWER: none
 
 Phase **T2** of the master plan `SOURCE_SELECTION_MASTER_PLAN.md` (orchestration only — everything
 this plan needs is inline). **Depends on two published tags:**
-- `webtyp.com/model` with `Field.Label` (`https://github.com/webtyp/model/blob/main/docs/PLAN.md`);
+- `webtyp.com/model` with `Field.Label` and `Field.Help` (`https://github.com/webtyp/model/blob/main/docs/PLAN.md`);
 - `webtyp.com/lang` with the page-dictionary stage (Part 2)
   (`https://github.com/webtyp/lang/blob/main/docs/PLAN.md`).
 
@@ -72,6 +72,23 @@ word or phrase with the comma. A library writes **English** and passes every vis
 3. Checkbox text (~466): the placeholder if set (already translated by `input`), else
    `lang.Translate(fc.label).String()`.
 
+## Stage 1b — help text
+
+Already published, use them: `webtyp.com/widget` ≥ v0.6.36 has `widget.PartHelp`, and
+`webtyp.com/dom` ≥ v0.13.20 has `(*Element).DescribedBy(others ...*Element)`. It sets
+`aria-describedby` from the minted IDs, the same contract as `For`. Never compose an id by hand.
+1. `fieldComponent` gets an unexported `help string` = `field.Help`, set in `New` like `label`.
+2. In `fieldComponent.Render()`, when `help != ""`, add right after the label element:
+   `helpEl := dom.NewElement("small").Class(widget.NameField.Class(widget.PartHelp).String()).Text(lang.Translate(fc.help).String())`.
+3. The control gets `DescribedBy(helpEl, errSpan)` (help first, then the error span already
+   built for `fc.Input.ErrorID()`). With no help, use `DescribedBy(errSpan)`, so the error
+   message is announced by screen readers too.
+4. Skin (`css.go`): add `Part(widget.PartHelp, …)` — small, muted text in normal flow under the
+   control: `style.Glyph(style.Inactive)`, `style.FontSize(style.TextXs)`,
+   `style.PadInline(style.Space4)`. Compose only existing recipes. If no recipe expresses "muted
+   small text", that is a defect in `webtyp/widget/style`: stop, and report it in the PR under
+   `## Executor notes`. Never hand-write CSS here.
+
 ## Stage 2 — options, submit
 
 - Placeholder (~550): **no change.** `GetPlaceholder()` already returns the translated text, built
@@ -90,7 +107,11 @@ word or phrase with the comma. A library writes **English** and passes every vis
   - `{Name: "is_active", Type: input.Checkbox()}` with no Label: the label and the checkbox text are
     `is active`;
   - a field whose input has a placeholder and no Label: the label is the humanised name, **not** the
-    placeholder. This is the red test for the deleted fallback; it fails on today's code.
+    placeholder. This is the red test for the deleted fallback; it fails on today's code;
+  - `{Name: "rut", Help: "Format: 12.345.678-9", Type: input.Rut()}`: a `small` element with class
+    `field__help` and that text, and the control's `aria-describedby` lists the help element's ID
+    first and then the error span's ID; a field without Help has `aria-describedby` = the error
+    span's ID only.
 - **WASM** (`tests/label_translate_test.go`, `//go:build wasm`): `TestMain` inserts
   `<script type="application/json" id="` + lang.ScriptID + `">` with
   `{"default":"es","languages":["es"],"keys":{"Computer":["Computador"],"IP address":["Dirección IP"],"Submit":["Guardar"],"example:":["ejemplo:"],"is active":["Activo"]}}`
@@ -116,5 +137,6 @@ word or phrase with the comma. A library writes **English** and passes every vis
 | # | Stage | Files |
 |---|---|---|
 | 1 | Label | `form.go`, `render_input.go` |
+| 1b | Help | `form.go`, `render_input.go`, `css.go`, `go.mod` (widget ≥ v0.6.36, dom ≥ v0.13.20) |
 | 2 | Options, submit | `render_input.go`, `form.go`, `go.mod`, `go.sum` |
 | 3 | Tests | `tests/label_test.go`, `tests/label_translate_test.go`, root `*_test.go` |
