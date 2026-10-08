@@ -3,6 +3,7 @@
 package form_test
 
 import (
+	"strings"
 	"testing"
 
 	"webtyp.com/fmt"
@@ -67,5 +68,21 @@ func TestForm_RenderCSS(t *testing.T) {
 	methodSheet := f.RenderCSS()
 	if methodSheet == nil {
 		t.Fatal("f.RenderCSS() returned nil")
+	}
+}
+
+// TestForm_ColumnsFollowTheContainer is the regression for the login card: a
+// form inside a narrow card got two half-width columns on a desktop screen
+// because the switch to one column was a VIEWPORT media query. The grid must
+// reflow by the form's own width (capped at two columns), with no media query.
+func TestForm_ColumnsFollowTheContainer(t *testing.T) {
+	cssText := form.RenderCSS().String()
+	formClass := "." + widget.NameField.Class(widget.PartForm).String()
+
+	if strings.Contains(cssText, "@media") && strings.Contains(cssText[strings.Index(cssText, "@media"):], formClass) {
+		t.Errorf("the form's column count must not depend on a viewport media query:\n%s", cssText)
+	}
+	if !strings.Contains(cssText, "--cols: 2;") || !strings.Contains(cssText, "repeat(auto-fit") {
+		t.Errorf("the form must use a container-reflowing grid capped at 2 columns:\n%s", cssText)
 	}
 }

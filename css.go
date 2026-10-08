@@ -39,12 +39,13 @@ func RenderCSS() *css.Stylesheet {
 		// container spaces every field the same and — unlike a per-field
 		// margin — does not double up at the first and last field against the
 		// card's own inset.
+		//
+		// Two columns where the FORM is wide enough, one where it is not — by
+		// the form's own width, never the viewport's: a login card is narrow on
+		// a desktop screen too, and a viewport query gave its only field half
+		// the card. ColumnMedium is the narrowest a field reads well at.
 		Part(widget.PartForm,
-			style.FixedGrid(2, style.Space2),
-			style.PadInline(style.Space1),
-		).
-		On(css.Mobile, widget.PartForm,
-			style.FixedGrid(1, style.Space2),
+			style.Grid(2, style.ColumnMedium, style.Space2),
 			style.PadInline(style.Space1),
 		).
 		// A legend, not a caption: OnEdge(EdgeTop) seats the chip flush against
