@@ -2,6 +2,8 @@
 PLAN: "fix(form): SetOptions finds the field by name, not by == between interfaces"
 EXECUTOR: jules
 REVIEWER: none
+STATUS: running
+SESSION: 8050262862025602113
 ---
 
 # Plan — `Form.SetOptions` sin `==` entre interfaces
