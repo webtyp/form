@@ -399,7 +399,7 @@ func (f *Form) SetOptions(fieldName string, opts ...fmt.KeyValue) *Form {
 		}
 	}
 	for _, c := range f.children {
-		if fc, ok := c.(*fieldComponent); ok && fc.Input == inp {
+		if fc, ok := c.(*fieldComponent); ok && fc.Input.FieldName() == fieldName {
 			fc.refreshOptions()
 		}
 	}
