@@ -2,8 +2,9 @@
 PLAN: "fix(form): SetOptions finds the field by name, not by == between interfaces"
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 8050262862025602113
+PR: https://github.com/webtyp/form/pull/25
 ---
 
 # Plan — `Form.SetOptions` sin `==` entre interfaces
