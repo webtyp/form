@@ -106,6 +106,12 @@ func (fc *fieldComponent) validate(val string) {
 		fc.err.Set("")
 		return
 	}
+	if val == "" {
+		if req, ok := fc.Input.(interface{ IsRequired() bool }); ok && !req.IsRequired() {
+			fc.err.Set("")
+			return
+		}
+	}
 	if err := fc.Input.Validate(val); err != nil {
 		fc.err.Set(err.Error())
 	} else {

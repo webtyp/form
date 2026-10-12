@@ -26,6 +26,14 @@ func (f *Form) Validate() error {
 			}
 		}
 
+		// Optional field that is empty passes validation.
+		if val == "" {
+			if req, ok := inp.(interface{ IsRequired() bool }); ok && !req.IsRequired() {
+				f.errorSignals[i].Set("")
+				continue
+			}
+		}
+
 		if err := inp.Validate(val); err != nil {
 			if first == nil {
 				first = err
