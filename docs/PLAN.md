@@ -10,6 +10,12 @@ SESSION: 4748136233166290427
 
 # Plan — the one field format of the app
 
+## Tools — install before anything else
+
+```bash
+go install webtyp.com/devflow/cmd/gotest@latest
+```
+
 ## Problem
 
 `form` is the only field of every webtyp app, but its skin is a coloured label chip straddling the
