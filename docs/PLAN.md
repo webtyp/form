@@ -2,6 +2,8 @@
 PLAN: "feat(form)!: one field format — label above, single column, help and error below, validate on blur"
 EXECUTOR: jules
 REVIEWER: none
+STATUS: running
+SESSION: 4748136233166290427
 ---
 
 > Read AGENTS.md at the repo root before any change.
