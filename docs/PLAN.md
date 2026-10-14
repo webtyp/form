@@ -96,7 +96,15 @@ locked, submit, SpanFull — exactly as it is, except removing the chip padding 
 | `PartLabel` | `FontSize(TextSm)`, `FontWeight(WeightMedium)`, `StartContent()` — no chip options |
 | `PartInput` | `As(Field)`, `Round(RadiusMd)`, `PadInline(Space4)`, `ControlBox()` — no `PadEdge` |
 | `PartTextarea` | `PadEdge(EdgeTop, Space2)`, `PadInline(Space4)` |
-| `PartRadioGroup` | as today without `PadEdge(EdgeTop, Space2)` |
+| `PartRadioGroup` | `Row(Space2)` — no `As(Field)`, `ControlBox`, `PadEdge` |
+| `PartRadioOption` | `Button(style.Panel)`, `Round(RadiusMd)` |
+
+States:
+- `When(widget.Selected, widget.PartRadioOption, style.As(style.Primary))`
+- `PartRadioUnchecked` and `PartRadioChecked` get `Hide()`
+- Delete the two `WhenWithin(Selected, ...)` glyph rules for radio
+- Native radio stays `VisuallyHidden()`
+- Locked: `WhenWithin(widget.Locked, "", widget.PartRadioOption, style.As(style.Inactive))` replaces the locked rule on `PartRadioGroup`.
 | `PartHelp` | `Glyph(Inactive)`, `FontSize(TextXs)` — no `PadInline` |
 | `PartError` | `Glyph(Danger)`, `FontSize(TextXs)` — in the flow, no `Docked` |
 
@@ -113,19 +121,11 @@ States:
 
 ## Stage 5 — tests (`tests/`)
 
-Update the existing tests that assert the old skin or truncation (`styling_test.go`,
-`label.*_test.go`, `render_input_test.go`, `anatomy*_test.go`, `css_test.go`) to the new format, and add:
-
-- `label_full_test.go`: a field whose `Label` is `"Date of birth and place"` (24 bytes) renders that
-  exact text in the `<label>` — no ellipsis.
-- `field_order_test.go`: rendered child order of a field with `Help` is label, input, help, error.
-- `validate_on_blur.front_test.go` (wasm, like `onfieldchange.front_test.go`): typing an invalid value
-  shows no error; blur shows it; typing a valid value then clears it without a blur.
-- `label_missing_test.go`: `form.New` over a model whose widget field has no `Label` calls the logger
-  set with `dom.SetLog` once with `errFieldWithoutLabel` text and the field name; the label still renders
-  the humanized name.
-- `css_test.go`: the stylesheet contains no `grid-template-columns` for the form part, and the error
-  part has no `position: absolute`.
+Test behaviour only, never the look.
+1. DELETE existing tests whose only assertion is the look (emitted CSS declarations, chip/legend classes, label truncation, child order: `styling_test.go`, `css_test.go` and look-only cases in `label.*_test.go`, `render_input_test.go`, `anatomy*_test.go`).
+2. Keep every behaviour test (values, validation, submit, dirty, locked, options).
+3. Add `tests/validate_on_blur.front_test.go` (wasm, like `onfieldchange.front_test.go`): typing an invalid value shows no error; blur shows it; typing a valid value then clears it without a blur.
+4. Add `tests/label_missing_test.go`: `form.New` over a model whose widget field has no `Label` calls the logger set with `dom.SetLog` once with `errFieldWithoutLabel` text and the field name; the label still renders the humanized name.
 
 ## Stage 6 — docs
 

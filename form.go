@@ -253,6 +253,8 @@ func humanize(name string) string {
 	return fmt.Convert(name).Replace("_", " ").String()
 }
 
+const errFieldWithoutLabel = "webtyp/form: field has a widget but no Label — set model.Field.Label:"
+
 // New creates a new Form from a Fielder. idGen is REQUIRED — form never
 // constructs its own ID generator (see model.IDGenerator's doc comment); pass
 // unixid.NewUnixID() at your composition root, or a test double in tests.
@@ -341,6 +343,7 @@ func New(parentID string, data model.Fielder, idGen model.IDGenerator, opts ...O
 		}
 		if label == "" {
 			label = humanize(field.Name)
+			dom.Log(errFieldWithoutLabel, structName, field.Name)
 		}
 
 		// A closure, not f.onFieldChange by value: OnFieldChange is meant to be

@@ -18,99 +18,46 @@ func (f *Form) RenderCSS() *css.Stylesheet {
 func RenderCSS() *css.Stylesheet {
 	f := &Form{}
 	return style.For(f).
-		// The field is not a card. It is a label chip sitting on an input box:
-		// wrapping the pair in a second bordered panel nests a box inside a box
-		// and reads as clutter once several fields stack up.
-		//
 		// The field owns NO vertical rhythm of its own — the gap between
 		// consecutive fields is one value, on the form container (PartForm
-		// below). What the field reserves is ChipSeat(EdgeTop): exactly half a
-		// chip-height of top padding, the space the legend seats into so it
-		// centres on the input's top border without poking out of whatever
-		// card the form sits in. PadInline is the field's only other padding —
-		// the input's inset from the field's own edges.
+		// below).
 		Root(
 			style.Anchor(),
-			style.Stack(style.SpaceNone),
-			style.ChipSeat(style.EdgeTop),
+			style.Stack(style.Space1),
 			style.KeepSize(),
 		).
 		// The form: the one place the inter-field rhythm lives. A gap on the
 		// container spaces every field the same and — unlike a per-field
 		// margin — does not double up at the first and last field against the
 		// card's own inset.
-		//
-		// Two columns where the FORM is wide enough, one where it is not — by
-		// the form's own width, never the viewport's: a login card is narrow on
-		// a desktop screen too, and a viewport query gave its only field half
-		// the card. ColumnMedium is the narrowest a field reads well at.
 		Part(widget.PartForm,
-			style.Grid(2, style.ColumnMedium, style.Space2),
-			style.PadInline(style.Space1),
+			style.Stack(style.Space4),
+			style.Width(style.Readable),
 		).
-		// A legend, not a caption: OnEdge(EdgeTop) seats the chip flush against
-		// the field's ChipSeat padding and centres it — pinned to the shared
-		// --chip-height token — on the input's top border. SpaceNone block
-		// offset: the seat already IS half a chip-height, no extra gap wanted.
-		// The targetlist badge straddles its row's bottom line by the same
-		// token, so legend and badge align by construction.
-		// No ChipBox: a legend is read, not lined up. ChipBox pins every chip to
-		// --chip-width and clips the overflow, which is right for a badge in a
-		// column of badges (they align) and wrong here — one field per row means
-		// there is no column to align with, so a short label like "id" padded a
-		// fixed 112px reads as a mislabelled box, and a long one is silently cut
-		// mid-word. Shrink-wrapped to its text, the chip says exactly its own
-		// name at any length.
-		//
-		// Capitalize: the text arrives as a model's field name (id, name, ip),
-		// lower-cased because that is what the struct tag says. Casing it here
-		// keeps that decision in the skin instead of asking every model to
-		// pre-format a display string.
+		// Field label above the control.
 		Part(widget.PartLabel,
-			style.OnEdge(style.EdgeTop, style.SideStart, style.SpaceNone, style.Space4),
-			style.As(style.Primary),
-			style.Round(style.RadiusSm),
-			style.FontSize(style.TextXs),
-			style.FontWeight(style.WeightBold),
-			style.Raise(style.Raised),
-			style.Capitalize(),
+			style.FontSize(style.TextSm),
+			style.FontWeight(style.WeightMedium),
 			style.StartContent(),
-			style.PadInline(style.Space2),
 		).
-		// Red text growing leftward from the field's trailing edge — not a filled
-		// bar across the whole field, and not riding the border either: OnEdge
-		// straddled the input's top line and the message came out cut by it.
-		// It sits inside the box with equal air above and to the right.
-		// Space4, not Space2: an absolute box is laid out against the Root's
-		// PADDING box, so the first Space2 only buys back the Root's own Pad and
-		// leaves the text flush with the input's border. Space4 spends that Space2
-		// and puts a real Space2 between the message and both edges.
+		// The error message below the control.
 		Part(widget.PartError,
-			style.Docked(style.Parent, style.EdgeTop, style.SideEnd, style.Space4),
 			style.Glyph(style.Danger),
 			style.FontSize(style.TextXs),
 		).
 		Part(widget.PartHelp,
 			style.Glyph(style.Inactive),
 			style.FontSize(style.TextXs),
-			style.PadInline(style.Space4),
 		).
-		// Space4, not Space2: the legend rides the input's top border and hangs
-		// half its height inside the box, so the value needs room to clear it.
-		// At the chip's 20px height the hang is 10px and Space4's 16px still
-		// clears it.
-		// Field: the legend chip is centred ON the input's top border line,
-		// and shares the clean white background of the list rows while keeping
-		// the hairline ColorOutline frame.
+		// Field.
 		Part(widget.PartInput,
 			style.As(style.Field),
 			style.Round(style.RadiusMd),
 			style.PadInline(style.Space4),
-			style.PadEdge(style.EdgeTop, style.Space2),
 			style.ControlBox(),
 		).
 		Part(widget.PartTextarea,
-			style.PadEdge(style.EdgeTop, style.Space4),
+			style.PadEdge(style.EdgeTop, style.Space2),
 			style.PadInline(style.Space4),
 		).
 		// Bottom-right corner of the field, not top-right: PartError already
@@ -129,33 +76,23 @@ func RenderCSS() *css.Stylesheet {
 			style.ControlBox(),
 		).
 		Part(widget.PartRadioGroup,
-			style.As(style.Field),
-			style.Round(style.RadiusMd),
-			style.ControlBox(),
-			style.Row(style.Space4),
-			style.PadInline(style.Space4),
-			style.PadEdge(style.EdgeTop, style.Space2),
+			style.Row(style.Space2),
 		).
 		Part(widget.PartRadioOption,
-			style.Row(style.Space2),
-			style.Grow(),
-			style.Interactive(style.Bare),
+			style.Button(style.Panel),
+			style.Round(style.RadiusMd),
 		).
 		Part(widget.PartRadioNative,
 			style.VisuallyHidden(),
 		).
 		Part(widget.PartRadioUnchecked,
-			style.IconBox(style.IconMd),
+			style.Hide(),
 		).
 		Part(widget.PartRadioChecked,
-			style.IconBox(style.IconMd),
 			style.Hide(),
 		).
-		WhenWithin(widget.Selected, widget.PartRadioOption, widget.PartRadioUnchecked,
-			style.Hide(),
-		).
-		WhenWithin(widget.Selected, widget.PartRadioOption, widget.PartRadioChecked,
-			style.Show(),
+		When(widget.Selected, widget.PartRadioOption,
+			style.As(style.Primary),
 		).
 		Part(widget.PartCheckOption,
 			style.As(style.Field),
@@ -228,18 +165,25 @@ func RenderCSS() *css.Stylesheet {
 			style.As(style.Secondary),
 			style.Round(style.RadiusMd),
 		).
-		WhenWithin(widget.Locked, "", widget.PartRadioGroup,
-			style.As(style.Secondary),
-			style.Round(style.RadiusMd),
+		WhenWithin(widget.Locked, "", widget.PartRadioOption,
+			style.As(style.Inactive),
 		).
 		WhenWithin(widget.Locked, "", widget.PartCheckOption,
 			style.As(style.Secondary),
 			style.Round(style.RadiusMd),
 		).
+		// Hide help text when error is present.
+		WhenWithin(widget.Invalid, "", widget.PartHelp,
+			style.Hide(),
+		).
 		// No filled state on the field itself: the red message in the corner is
 		// the signal. Painting the whole box danger buried the value.
 		When(widget.Invalid, widget.PartInput,
 			style.Glyph(style.Danger),
+		).
+		// Highlight label text color when field is focused.
+		CueWithin(widget.FocusWithin, "", widget.PartLabel,
+			style.Glyph(style.Primary),
 		).
 		// dom writes data-selected on the reveal button itself when the
 		// value is showing (see form's wireMaskToggle) — When targets the

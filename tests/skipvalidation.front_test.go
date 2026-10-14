@@ -58,16 +58,17 @@ func renderSVForm(t *testing.T, mountID string, skip bool) (js.Value, js.Value) 
 	}
 	errSpan := doc.Call("getElementById", mountID+".sv.code.error")
 	if errSpan.IsNull() || errSpan.IsUndefined() {
+		t.Logf("innerHTML: %s", mount.Get("innerHTML").String())
 		t.Fatalf("error span #%s.sv.code.error not found after render", mountID)
 	}
 	return el, errSpan
 }
 
-// typeInto simulates a real edit: set the value and fire "input", which is the
-// event fieldComponent binds its live validation to.
-func typeInto(el js.Value, value string) {
+// commitInto simulates a real edit: set the value, fire "input", then fire "blur"
+func commitInto(el js.Value, value string) {
 	el.Set("value", value)
 	el.Call("dispatchEvent", js.Global().Get("Event").New("input"))
+	el.Call("dispatchEvent", js.Global().Get("Event").New("blur"))
 }
 
 // invalidForText is a value input.Text() rejects: "-" is outside its charset
@@ -77,11 +78,11 @@ const invalidForText = "12345678-9"
 
 // TestLiveValidation_ShowsErrorByDefault is the control: without
 // SetSkipValidation, typing a value the charset rejects must surface the error
-// live, on the keystroke — the behavior every ordinary field depends on.
+// when the field is left — the behavior every ordinary field depends on.
 func TestLiveValidation_ShowsErrorByDefault(t *testing.T) {
 	el, errSpan := renderSVForm(t, "sv-mount-default", false)
 
-	typeInto(el, invalidForText)
+	commitInto(el, invalidForText)
 
 	if got := errSpan.Get("textContent").String(); got == "" {
 		t.Error("expected a live validation error for a rejected character, got none")
@@ -90,13 +91,13 @@ func TestLiveValidation_ShowsErrorByDefault(t *testing.T) {
 
 // TestLiveValidation_SilentWhenSkipValidation guards the fix: Form.Validate()
 // (which gates submission) already honored SetSkipValidation, but the live
-// per-keystroke path did not — so a field explicitly opted out of validation
+// path did not — so a field explicitly opted out of validation
 // still flashed a red error as the user typed, revealing a format it was
 // supposed to keep to itself. Both paths must agree.
 func TestLiveValidation_SilentWhenSkipValidation(t *testing.T) {
 	el, errSpan := renderSVForm(t, "sv-mount-skip", true)
 
-	typeInto(el, invalidForText)
+	commitInto(el, invalidForText)
 
 	if got := errSpan.Get("textContent").String(); got != "" {
 		t.Errorf("expected no live error when SetSkipValidation(true), got %q", got)
