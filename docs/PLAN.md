@@ -96,11 +96,14 @@ locked, submit, SpanFull — exactly as it is, except removing the chip padding 
 | `PartLabel` | `FontSize(TextSm)`, `FontWeight(WeightMedium)`, `StartContent()` — no chip options |
 | `PartInput` | `As(Field)`, `Round(RadiusMd)`, `PadInline(Space4)`, `ControlBox()` — no `PadEdge` |
 | `PartTextarea` | `PadEdge(EdgeTop, Space2)`, `PadInline(Space4)` |
-| `PartRadioGroup` | as today without `PadEdge(EdgeTop, Space2)` |
+| `PartRadioGroup` | `Row(Space2)` (wraps, packed to the start) — no `As(Field)`, no `ControlBox`, no `PadEdge` |
+| `PartRadioOption` | `Button(style.Panel)`, `Round(RadiusMd)` — each option is a chip, as wide as its label |
 | `PartHelp` | `Glyph(Inactive)`, `FontSize(TextXs)` — no `PadInline` |
 | `PartError` | `Glyph(Danger)`, `FontSize(TextXs)` — in the flow, no `Docked` |
 
 States:
+
+- Radio as chips (same look as `webtyp/components/chipgrid`): `When(widget.Selected, widget.PartRadioOption, style.As(style.Primary))`; `PartRadioUnchecked` and `PartRadioChecked` get `style.Hide()` and the two `WhenWithin(widget.Selected, …)` glyph rules are deleted; the native radio stays `VisuallyHidden()` (keyboard and screen readers keep working). Locked: `WhenWithin(widget.Locked, "", widget.PartRadioOption, style.As(style.Inactive))` replaces the locked rule on `PartRadioGroup`.
 
 - `WhenWithin(widget.Invalid, "", widget.PartHelp, style.Hide())` — the error replaces the help.
 - Keep `When(widget.Invalid, widget.PartInput, style.Glyph(style.Danger))`.
@@ -124,6 +127,7 @@ Update the existing tests that assert the old skin or truncation (`styling_test.
 - `label_missing_test.go`: `form.New` over a model whose widget field has no `Label` calls the logger
   set with `dom.SetLog` once with `errFieldWithoutLabel` text and the field name; the label still renders
   the humanized name.
+- `radio_chips_test.go`: a radio field renders one option per choice with the option part class, the selected one carries the selected state, and the stylesheet gives the selected option the primary surface.
 - `css_test.go`: the stylesheet contains no `grid-template-columns` for the form part, and the error
   part has no `position: absolute`.
 
