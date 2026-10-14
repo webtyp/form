@@ -114,22 +114,17 @@ States:
   express it, **stop and report it in the PR** — never hand-compose CSS.
 - Delete the comments that describe the chip/legend geometry; one short comment per part is enough.
 
-## Stage 5 — tests (`tests/`)
+## Stage 5 — tests: behaviour only, never the look
 
-Update the existing tests that assert the old skin or truncation (`styling_test.go`,
-`label.*_test.go`, `render_input_test.go`, `anatomy*_test.go`, `css_test.go`) to the new format, and add:
-
-- `label_full_test.go`: a field whose `Label` is `"Date of birth and place"` (24 bytes) renders that
-  exact text in the `<label>` — no ellipsis.
-- `field_order_test.go`: rendered child order of a field with `Help` is label, input, help, error.
-- `validate_on_blur.front_test.go` (wasm, like `onfieldchange.front_test.go`): typing an invalid value
-  shows no error; blur shows it; typing a valid value then clears it without a blur.
-- `label_missing_test.go`: `form.New` over a model whose widget field has no `Label` calls the logger
-  set with `dom.SetLog` once with `errFieldWithoutLabel` text and the field name; the label still renders
-  the humanized name.
-- `radio_chips_test.go`: a radio field renders one option per choice with the option part class, the selected one carries the selected state, and the stylesheet gives the selected option the primary surface.
-- `css_test.go`: the stylesheet contains no `grid-template-columns` for the form part, and the error
-  part has no `position: absolute`.
+- **Delete** the existing tests whose only assertion is the look: emitted CSS declarations, chip/legend
+  classes, label truncation, child order (`styling_test.go`, `css_test.go` and the look-only cases in
+  `label.*_test.go`, `render_input_test.go`, `anatomy*_test.go`). Keep every test that asserts
+  behaviour (values, validation, submit, dirty state, locked, options).
+- Add only:
+  - `validate_on_blur.front_test.go` (wasm, like `onfieldchange.front_test.go`): typing an invalid
+    value shows no error; blur shows it; typing a valid value then clears it without a blur.
+  - `label_missing_test.go`: `form.New` over a model whose widget field has no `Label` calls the logger
+    set with `dom.SetLog` once with `errFieldWithoutLabel` and the field name.
 
 ## Stage 6 — docs
 
@@ -147,5 +142,5 @@ a field without `Label` logs `webtyp/form: field has a widget but no Label`.
 | 1, 2 | `render_input.go` |
 | 3 | `form.go` |
 | 4 | `css.go` |
-| 5 | `tests/*` listed above |
+| 5 | the look-only tests deleted, `tests/validate_on_blur.front_test.go`, `tests/label_missing_test.go` |
 | 6 | `README.md`, `docs/DESIGN.md`, `docs/API.md` |

@@ -14,7 +14,7 @@
 - WASM code: `webtyp/fmt`, `webtyp/time`, `webtyp/json` instead of stdlib; no `map`; `dom.Element` embedded by value.
 - `css.go`, `svg.go`, `js.go`, `html.go` carry `//go:build !wasm`; no `ssr.go`, no `front.go`.
 - Code and keys in English; UI text is `lang.Text`, translations live in `lang.json`.
-- Tests in `tests/` (external package), real stack with fakes only at the edge; run `gotest`.
+- Tests cover behaviour and domain rules, never the look (CSS, colours, markup order, class strings). In `tests/` (external package), real stack with fakes only at the edge; run `gotest`.
 - Docs (`README.md`, `docs/*`) updated with the API; permanent docs never link `docs/PLAN.md`.
 - Before the PR: `git diff --stat main` lists every file of the plan's stages, and nothing the plan did not order is deleted.
 <!-- /webtyp:base -->
