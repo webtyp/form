@@ -2,8 +2,10 @@
 PLAN: "feat(form)!: one field format — label above, single column, help and error below, validate on blur"
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 4748136233166290427
+PR: https://github.com/webtyp/form/pull/26
+REVIEWED_COMMIT: 13609c4a4f5ba3943e7819e8407108f9eac1fa22
 ---
 
 > Read AGENTS.md at the repo root before any change.
