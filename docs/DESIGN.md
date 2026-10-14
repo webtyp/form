@@ -39,3 +39,7 @@ Instead of imperative mounting, the form uses Signal-Bound fields for IME/cursor
 - `Bind(signal)` ensures two-way sync without breaking IME composition or jumping the cursor.
 - Live validation updates only the error text node and class, never re-rendering the input.
 - Submit button state (disabled/label) is bound to a `submitting` Signal.
+
+## Field Formats
+
+The layout is a one-column stack. Labels render fully (no truncation) above the control. Errors (if any) replace the help text below the control. If a field lacks a `Label` in its `model.Field`, the engine logs a diagnostic (`webtyp/form: field has a widget but no Label — set model.Field.Label:`) and falls back to a humanized struct field name.

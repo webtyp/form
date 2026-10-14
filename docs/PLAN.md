@@ -2,19 +2,15 @@
 PLAN: "feat(form)!: one field format — label above, single column, help and error below, validate on blur"
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 4748136233166290427
+PR: https://github.com/webtyp/form/pull/26
+REVIEWED_COMMIT: 82c88d9eea60e6945b44aae66a9bb69a2cc73ad6
 ---
 
 > Read AGENTS.md at the repo root before any change.
 
 # Plan — the one field format of the app
-
-## Tools — install before anything else
-
-```bash
-go install webtyp.com/devflow/cmd/gotest@latest
-```
 
 ## Problem
 
@@ -102,14 +98,19 @@ locked, submit, SpanFull — exactly as it is, except removing the chip padding 
 | `PartLabel` | `FontSize(TextSm)`, `FontWeight(WeightMedium)`, `StartContent()` — no chip options |
 | `PartInput` | `As(Field)`, `Round(RadiusMd)`, `PadInline(Space4)`, `ControlBox()` — no `PadEdge` |
 | `PartTextarea` | `PadEdge(EdgeTop, Space2)`, `PadInline(Space4)` |
-| `PartRadioGroup` | `Row(Space2)` (wraps, packed to the start) — no `As(Field)`, no `ControlBox`, no `PadEdge` |
-| `PartRadioOption` | `Button(style.Panel)`, `Round(RadiusMd)` — each option is a chip, as wide as its label |
+| `PartRadioGroup` | `Row(Space2)` — no `As(Field)`, `ControlBox`, `PadEdge` |
+| `PartRadioOption` | `Button(style.Panel)`, `Round(RadiusMd)` |
+
+States:
+- `When(widget.Selected, widget.PartRadioOption, style.As(style.Primary))`
+- `PartRadioUnchecked` and `PartRadioChecked` get `Hide()`
+- Delete the two `WhenWithin(Selected, ...)` glyph rules for radio
+- Native radio stays `VisuallyHidden()`
+- Locked: `WhenWithin(widget.Locked, "", widget.PartRadioOption, style.As(style.Inactive))` replaces the locked rule on `PartRadioGroup`.
 | `PartHelp` | `Glyph(Inactive)`, `FontSize(TextXs)` — no `PadInline` |
 | `PartError` | `Glyph(Danger)`, `FontSize(TextXs)` — in the flow, no `Docked` |
 
 States:
-
-- Radio as chips (same look as `webtyp/components/chipgrid`): `When(widget.Selected, widget.PartRadioOption, style.As(style.Primary))`; `PartRadioUnchecked` and `PartRadioChecked` get `style.Hide()` and the two `WhenWithin(widget.Selected, …)` glyph rules are deleted; the native radio stays `VisuallyHidden()` (keyboard and screen readers keep working). Locked: `WhenWithin(widget.Locked, "", widget.PartRadioOption, style.As(style.Inactive))` replaces the locked rule on `PartRadioGroup`.
 
 - `WhenWithin(widget.Invalid, "", widget.PartHelp, style.Hide())` — the error replaces the help.
 - Keep `When(widget.Invalid, widget.PartInput, style.Glyph(style.Danger))`.
@@ -120,17 +121,13 @@ States:
   express it, **stop and report it in the PR** — never hand-compose CSS.
 - Delete the comments that describe the chip/legend geometry; one short comment per part is enough.
 
-## Stage 5 — tests: behaviour only, never the look
+## Stage 5 — tests (`tests/`)
 
-- **Delete** the existing tests whose only assertion is the look: emitted CSS declarations, chip/legend
-  classes, label truncation, child order (`styling_test.go`, `css_test.go` and the look-only cases in
-  `label.*_test.go`, `render_input_test.go`, `anatomy*_test.go`). Keep every test that asserts
-  behaviour (values, validation, submit, dirty state, locked, options).
-- Add only:
-  - `validate_on_blur.front_test.go` (wasm, like `onfieldchange.front_test.go`): typing an invalid
-    value shows no error; blur shows it; typing a valid value then clears it without a blur.
-  - `label_missing_test.go`: `form.New` over a model whose widget field has no `Label` calls the logger
-    set with `dom.SetLog` once with `errFieldWithoutLabel` and the field name.
+Test behaviour only, never the look.
+1. DELETE existing tests whose only assertion is the look (emitted CSS declarations, chip/legend classes, label truncation, child order: `styling_test.go`, `css_test.go` and look-only cases in `label.*_test.go`, `render_input_test.go`, `anatomy*_test.go`).
+2. Keep every behaviour test (values, validation, submit, dirty, locked, options).
+3. Add `tests/validate_on_blur.front_test.go` (wasm, like `onfieldchange.front_test.go`): typing an invalid value shows no error; blur shows it; typing a valid value then clears it without a blur.
+4. Add `tests/label_missing_test.go`: `form.New` over a model whose widget field has no `Label` calls the logger set with `dom.SetLog` once with `errFieldWithoutLabel` text and the field name; the label still renders the humanized name.
 
 ## Stage 6 — docs
 
@@ -148,5 +145,5 @@ a field without `Label` logs `webtyp/form: field has a widget but no Label`.
 | 1, 2 | `render_input.go` |
 | 3 | `form.go` |
 | 4 | `css.go` |
-| 5 | the look-only tests deleted, `tests/validate_on_blur.front_test.go`, `tests/label_missing_test.go` |
+| 5 | `tests/*` listed above |
 | 6 | `README.md`, `docs/DESIGN.md`, `docs/API.md` |

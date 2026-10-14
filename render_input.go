@@ -8,16 +8,6 @@ import (
 	"webtyp.com/widget"
 )
 
-// labelChars is the label's budget, calibrated against the --chip-width the
-// form skin gives the chip. Truncate counts the three-byte ellipsis inside this
-// number, so the visible text is labelChars-3 at most.
-//
-// The count is BYTES, not runes: an accented character costs two, and a cut can
-// land mid-character. Field names are identifiers in practice, so this is
-// tolerable here; a title with accents long enough to trip it belongs in the
-// input's title, not its label.
-const labelChars = 14
-
 // fieldComponent wraps an input.Input to implement dom.Component.
 type fieldComponent struct {
 	input.Input
@@ -141,7 +131,9 @@ func (fc *fieldComponent) Render() *dom.Element {
 	if r, ok := fc.Input.(Renderer); ok {
 		control = r.RenderInput(fc.value, func(v string) {
 			fc.value.Set(v)
-			fc.validate(v)
+			if fc.err.Get() != "" {
+				fc.validate(v)
+			}
 		})
 	} else {
 		htmlName := fc.Input.HTMLName()
@@ -167,8 +159,7 @@ func (fc *fieldComponent) Render() *dom.Element {
 		container.Child(dom.NewElement("label").
 			For(control).
 			Class(widget.NameField.Class(widget.PartLabel).String()).
-			Attr("title", lbl). // the untruncated text stays reachable
-			Text(fmt.Convert(lbl).Truncate(labelChars).String()))
+			Text(lbl))
 	}
 
 	errSpan := dom.NewElement("span").
@@ -182,7 +173,6 @@ func (fc *fieldComponent) Render() *dom.Element {
 		helpEl = dom.NewElement("small").
 			Class(widget.NameField.Class(widget.PartHelp).String()).
 			Text(lang.Translate(fc.help).String())
-		container.Child(helpEl)
 	}
 
 	if control != nil {
@@ -195,6 +185,9 @@ func (fc *fieldComponent) Render() *dom.Element {
 	}
 	if extra != nil {
 		container.Child(extra)
+	}
+	if helpEl != nil {
+		container.Child(helpEl)
 	}
 
 	container.Child(errSpan)
@@ -243,11 +236,16 @@ func (fc *fieldComponent) buildInput() (*dom.Element, *dom.Element) {
 	el.OnInput(func(e dom.Event) {
 		val := e.TargetValue()
 		fc.value.Set(val)
-		fc.validate(val)
+		if fc.err.Get() != "" {
+			fc.validate(val)
+		}
 	})
-	if fc.onCommit != nil {
-		el.OnBlur(func(dom.Event) { fc.onCommit() })
-	}
+	el.OnBlur(func(dom.Event) {
+		fc.validate(fc.value.Get())
+		if fc.onCommit != nil {
+			fc.onCommit()
+		}
+	})
 
 	applyCommonAttrs(el, fc)
 	return el, reveal
@@ -540,11 +538,16 @@ func (fc *fieldComponent) buildDatalist() (*dom.Element, *dom.Element) {
 	el.OnInput(func(e dom.Event) {
 		val := e.TargetValue()
 		fc.value.Set(val)
-		fc.validate(val)
+		if fc.err.Get() != "" {
+			fc.validate(val)
+		}
 	})
-	if fc.onCommit != nil {
-		el.OnBlur(func(dom.Event) { fc.onCommit() })
-	}
+	el.OnBlur(func(dom.Event) {
+		fc.validate(fc.value.Get())
+		if fc.onCommit != nil {
+			fc.onCommit()
+		}
+	})
 
 	applyCommonAttrs(el, fc)
 
