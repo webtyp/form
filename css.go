@@ -30,9 +30,14 @@ func RenderCSS() *css.Stylesheet {
 		// container spaces every field the same and — unlike a per-field
 		// margin — does not double up at the first and last field against the
 		// card's own inset.
+		//
+		// At most two columns, by the form's own width: one on a phone or a
+		// narrow card, two once the container fits two ColumnMedium tracks.
+		// No width cap — a capped single column left most of a desktop stage
+		// empty and made it scroll for nothing. Fields that need the whole
+		// row (textarea, submit) declare SpanFull.
 		Part(widget.PartForm,
-			style.Stack(style.Space4),
-			style.Width(style.Readable),
+			style.Grid(2, style.ColumnMedium, style.Space4),
 		).
 		// Field label above the control.
 		Part(widget.PartLabel,
@@ -60,6 +65,10 @@ func RenderCSS() *css.Stylesheet {
 			style.PadEdge(style.EdgeTop, style.Space2),
 			style.PadInline(style.Space4),
 		).
+		// The native option list of a select, in the accent (selection colour).
+		Part(widget.PartSelect,
+			style.Picker(),
+		).
 		// Bottom-right corner of the field, not top-right: PartError already
 		// owns the top-right corner (the two would overlap the moment a
 		// masked field also has an error to show). Docked has no
@@ -85,14 +94,11 @@ func RenderCSS() *css.Stylesheet {
 		Part(widget.PartRadioNative,
 			style.VisuallyHidden(),
 		).
-		Part(widget.PartRadioUnchecked,
-			style.Hide(),
-		).
-		Part(widget.PartRadioChecked,
-			style.Hide(),
-		).
+		// Selected is the accent, here and everywhere: the same amber as the
+		// current nav item and the chosen list row, and the same amber the focus
+		// ring draws, in the light and the dark theme alike.
 		When(widget.Selected, widget.PartRadioOption,
-			style.As(style.Primary),
+			style.As(style.Accent),
 		).
 		Part(widget.PartCheckOption,
 			style.As(style.Field),
@@ -105,11 +111,18 @@ func RenderCSS() *css.Stylesheet {
 		Part(widget.PartCheckNative,
 			style.VisuallyHidden(),
 		).
+		// The box is a CSS box, not drawn colours: the unchecked one is a field
+		// outline, the checked one the accent surface — the same fill the chosen
+		// radio chip has — so the theme decides the colour, not the markup.
 		Part(widget.PartCheckUnchecked,
 			style.IconBox(style.IconMd),
+			style.As(style.Field),
+			style.Round(style.RadiusSm),
 		).
 		Part(widget.PartCheckChecked,
 			style.IconBox(style.IconMd),
+			style.As(style.Accent),
+			style.Round(style.RadiusSm),
 			style.Hide(),
 		).
 		WhenWithin(widget.Selected, widget.PartCheckOption, widget.PartCheckUnchecked,
@@ -181,15 +194,11 @@ func RenderCSS() *css.Stylesheet {
 		When(widget.Invalid, widget.PartInput,
 			style.Glyph(style.Danger),
 		).
-		// Highlight label text color when field is focused.
-		CueWithin(widget.FocusWithin, "", widget.PartLabel,
-			style.Glyph(style.Primary),
-		).
 		// dom writes data-selected on the reveal button itself when the
 		// value is showing (see form's wireMaskToggle) — When targets the
 		// same element the state is written on, unlike WhenWithin above.
 		When(widget.Selected, widget.PartReveal,
-			style.Glyph(style.Primary),
+			style.Glyph(style.Accent),
 		).
 		When(widget.SpanFull, "",
 			style.SpanFull(),

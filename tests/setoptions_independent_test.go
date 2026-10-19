@@ -50,13 +50,13 @@ func TestSetOptions_OnlyUpdatesTargetField(t *testing.T) {
 	if selA.IsNull() || selA.IsUndefined() {
 		t.Fatal("select a not rendered")
 	}
-	optsA := selA.Get("options")
+	optsA := selA.Call("querySelectorAll", "option:not([value=\"\"])")
 	if n := optsA.Get("length").Int(); n != 1 {
 		t.Fatalf("before SetOptions(b): A has %d options, want 1", n)
 	}
 
 	selB := doc.Call("querySelector", "#sol-mount-multi select[name='b']")
-	optsB := selB.Get("options")
+	optsB := selB.Call("querySelectorAll", "option:not([value=\"\"])")
 	if n := optsB.Get("length").Int(); n != 0 {
 		t.Fatalf("before SetOptions(b): B has %d options, want 0", n)
 	}
@@ -66,13 +66,13 @@ func TestSetOptions_OnlyUpdatesTargetField(t *testing.T) {
 	)
 
 	selA = doc.Call("querySelector", "#sol-mount-multi select[name='a']")
-	optsA = selA.Get("options")
+	optsA = selA.Call("querySelectorAll", "option:not([value=\"\"])")
 	if n := optsA.Get("length").Int(); n != 1 {
 		t.Fatalf("after SetOptions(b): A has %d options, want 1 (it should not have been updated)", n)
 	}
 
 	selB = doc.Call("querySelector", "#sol-mount-multi select[name='b']")
-	optsB = selB.Get("options")
+	optsB = selB.Call("querySelectorAll", "option:not([value=\"\"])")
 	if n := optsB.Get("length").Int(); n != 1 {
 		t.Fatalf("after SetOptions(b): B has %d options, want 1", n)
 	}

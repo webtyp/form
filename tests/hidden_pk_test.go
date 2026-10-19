@@ -26,21 +26,23 @@ func (g *seqIDGen) NewID() string {
 // pkTextRecord carries a hidden text PK: the shape every real CRUD model has
 // (an id the form never renders).
 type pkTextRecord struct {
-	Id   string
-	Name string
+	Id     string
+	Name   string
+	Tenant string // no widget: the form never renders it, the record carries it
 }
 
 func (r *pkTextRecord) Schema() []model.Field {
 	return []model.Field{
 		{Name: "id", Type: input.Text(), NotNull: true, DB: &model.FieldDB{PK: true}},
 		{Name: "name", Type: input.Text()},
+		{Name: "tenant_id", Type: model.Text(), NotNull: true},
 	}
 }
 func (r *pkTextRecord) Pointers() []any {
 	if r == nil {
 		return nil
 	}
-	return []any{&r.Id, &r.Name}
+	return []any{&r.Id, &r.Name, &r.Tenant}
 }
 func (r *pkTextRecord) FormName() string { return "pktext" }
 func (r *pkTextRecord) IsNil() bool      { return r == nil }
@@ -66,15 +68,17 @@ func (r *pkIntRecord) Pointers() []any {
 func (r *pkIntRecord) FormName() string { return "pkint" }
 func (r *pkIntRecord) IsNil() bool      { return r == nil }
 
-// A loaded hidden PK travels with the record: syncing into a scratch object
-// (what crudview does — it syncs into the shared Presenter.Record()) must
-// write the LOADED id, never the scratch's own.
+// What the form does not render travels with the loaded record: syncing into a
+// scratch object (what crudview does — it syncs into the shared
+// Presenter.Record()) must write the LOADED id, and the LOADED values of the
+// fields with no widget (a tenant), never the scratch's own — a save that sent
+// the tenant blank was rejected with "tenant_id required".
 func TestHiddenPKLoadThenSyncIntoScratch(t *testing.T) {
 	f, err := form.New("p", &pkTextRecord{}, &seqIDGen{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := f.LoadValues(&pkTextRecord{Id: "a", Name: "Alice"}); err != nil {
+	if err := f.LoadValues(&pkTextRecord{Id: "a", Name: "Alice", Tenant: "t1"}); err != nil {
 		t.Fatal(err)
 	}
 	scratch := &pkTextRecord{Id: "zzz", Name: ""}
@@ -86,6 +90,9 @@ func TestHiddenPKLoadThenSyncIntoScratch(t *testing.T) {
 	}
 	if scratch.Name != "Alice" {
 		t.Errorf("expected name 'Alice', got %q", scratch.Name)
+	}
+	if scratch.Tenant != "t1" {
+		t.Errorf("expected the loaded tenant 't1' to travel with the record, got %q", scratch.Tenant)
 	}
 }
 

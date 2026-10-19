@@ -61,6 +61,21 @@ func (f *Form) SyncValues(data model.Fielder) error {
 		writeField(ptr, st, []string{f.loadedPK[k]})
 	}
 
+	// The fields the form does not render travel with the LOADED record, for the
+	// same reason as the hidden PK: the target is a scratch record, so what it
+	// holds in them is whatever was synced last (or nothing). A new record
+	// (nothing loaded) keeps the target's own — that is where its defaults live.
+	if f.hasCarried {
+		for k, idx := range f.carryIndices {
+			ptr, st := pointers[idx], schema[idx].Type.Storage()
+			if f.carried[k] == "" {
+				zeroField(ptr, st)
+				continue
+			}
+			writeField(ptr, st, []string{f.carried[k]})
+		}
+	}
+
 	return nil
 }
 

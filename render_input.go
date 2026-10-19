@@ -151,15 +151,28 @@ func (fc *fieldComponent) Render() *dom.Element {
 		}
 	}
 
-	// Field label. Rendered structurally for every titled field so a global form
-	// skin (e.g. components/fieldset) can present it as a chip/legend; `for` ties
-	// it to the input for click-to-focus. Form ships no styling for it — the look
-	// is the consumer's skin.
-	if lbl := fc.labelText(); lbl != "" && control != nil {
-		container.Child(dom.NewElement("label").
-			For(control).
+	// Field label, above the control. `for` ties it to the control for click-to-
+	// focus and the accessible name — except where the control is not labelable:
+	// a radio group is a div, so it names itself through role + aria-labelledby;
+	// a lone checkbox carries its own text inside the option and has no label
+	// above (it would repeat it), and takes the whole row so it never leaves a
+	// gap beside a neighbour that does have a label.
+	htmlName := ""
+	if _, custom := fc.Input.(Renderer); !custom {
+		htmlName = fc.Input.HTMLName()
+	}
+	if htmlName == "checkbox" {
+		container.SetState(widget.SpanFull)
+	} else if lbl := fc.labelText(); lbl != "" && control != nil {
+		label := dom.NewElement("label").
 			Class(widget.NameField.Class(widget.PartLabel).String()).
-			Text(lbl))
+			Text(lbl)
+		if htmlName == "radio" {
+			control.Attr("role", "radiogroup").Attr("aria-labelledby", label.GetID())
+		} else {
+			label.For(control)
+		}
+		container.Child(label)
 	}
 
 	errSpan := dom.NewElement("span").
@@ -306,7 +319,7 @@ func eyeGlyph() *dom.Element {
 func (fc *fieldComponent) buildSelect() *dom.Element {
 	el := dom.NewElement("select").
 		ID(fc.Input.GetID()).
-		Class(widget.NameField.Class(widget.PartInput).String()).
+		Class(widget.NameField.Class(widget.PartInput).String(), widget.NameField.Class(widget.PartSelect).String()).
 		Attr("name", fc.Input.FieldName())
 
 	if fc.Input.IsRequired() {
@@ -328,7 +341,22 @@ func (fc *fieldComponent) buildSelect() *dom.Element {
 	fc.bindOptions(el, func() []*dom.Element {
 		val := fc.value.Get()
 		opts := fc.Input.GetOptions()
-		nodes := make([]*dom.Element, 0, len(opts))
+		nodes := make([]*dom.Element, 0, len(opts)+1)
+		// With no value chosen the select shows a prompt instead of silently
+		// presenting its first option as if it had been picked. A required field
+		// cannot go back to the prompt once it has a value (disabled), an optional
+		// one can (that is how a value is cleared). Skipped when the options
+		// already include an empty one.
+		if !hasEmptyOption(opts) {
+			prompt := dom.NewElement("option").Attr("value", "").Text(lang.Translate("Select an option").String())
+			if val == "" {
+				prompt.Attr("selected", "")
+			}
+			if fc.Input.IsRequired() {
+				prompt.Attr("disabled", "")
+			}
+			nodes = append(nodes, prompt)
+		}
 		for _, opt := range opts {
 			option := dom.NewElement("option").Attr("value", opt.Key).Text(lang.Translate(opt.Value).String())
 			if val != "" && opt.Key == val {
@@ -339,6 +367,15 @@ func (fc *fieldComponent) buildSelect() *dom.Element {
 		return nodes
 	})
 	return el
+}
+
+func hasEmptyOption(opts []fmt.KeyValue) bool {
+	for _, o := range opts {
+		if o.Key == "" {
+			return true
+		}
+	}
+	return false
 }
 
 func (fc *fieldComponent) buildRadio() *dom.Element {
@@ -387,50 +424,12 @@ func (fc *fieldComponent) buildRadio() *dom.Element {
 				})
 
 			label.Child(radio)
-			label.Child(radioUncheckedGlyph())
-			label.Child(radioCheckedGlyph())
 			label.Child(dom.NewElement("span").Text(lang.Translate(optVal).String()))
 			nodes = append(nodes, label)
 		}
 		return nodes
 	})
 	return group
-}
-
-func radioUncheckedGlyph() *dom.Element {
-	return dom.NewElement("svg").
-		Class(widget.NameField.Class(widget.PartRadioUnchecked).String()).
-		Attr("viewBox", "0 0 24 24").
-		Attr("width", "24").
-		Attr("height", "24").
-		Attr("aria-hidden", "true").
-		Child(dom.NewElement("circle").
-			Attr("cx", "12").Attr("cy", "12").Attr("r", "9").
-			Attr("stroke", "var(--color-outline, #D1D1D6)").
-			Attr("stroke-width", "2").
-			Attr("fill", "none").
-			Attr("style", "fill: none;"))
-}
-
-func radioCheckedGlyph() *dom.Element {
-	return dom.NewElement("svg").
-		Class(widget.NameField.Class(widget.PartRadioChecked).String()).
-		Attr("viewBox", "0 0 24 24").
-		Attr("width", "24").
-		Attr("height", "24").
-		Attr("aria-hidden", "true").
-		Child(
-			dom.NewElement("circle").
-				Attr("cx", "12").Attr("cy", "12").Attr("r", "9").
-				Attr("stroke", "var(--color-primary, #654FF0)").
-				Attr("stroke-width", "2").
-				Attr("fill", "none").
-				Attr("style", "fill: none;"),
-			dom.NewElement("circle").
-				Attr("cx", "12").Attr("cy", "12").Attr("r", "5").
-				Attr("fill", "var(--color-primary, #654FF0)").
-				Attr("style", "fill: var(--color-primary, #654FF0);"),
-		)
 }
 
 func (fc *fieldComponent) buildCheckbox() *dom.Element {
@@ -485,42 +484,28 @@ func (fc *fieldComponent) buildCheckbox() *dom.Element {
 	return label
 }
 
+// checkUncheckedGlyph and checkCheckedGlyph are only the boxes' elements: their
+// colours, outline and radius come from the stylesheet (css.go), so no colour
+// is written here. The viewBox crops to the tick's own 18x18 square so the
+// tick fills the CSS box.
 func checkUncheckedGlyph() *dom.Element {
 	return dom.NewElement("svg").
 		Class(widget.NameField.Class(widget.PartCheckUnchecked).String()).
-		Attr("viewBox", "0 0 24 24").
-		Attr("width", "24").
-		Attr("height", "24").
-		Attr("aria-hidden", "true").
-		Child(dom.NewElement("rect").
-			Attr("x", "3").Attr("y", "3").Attr("width", "18").Attr("height", "18").Attr("rx", "4").
-			Attr("stroke", "var(--color-outline, #D1D1D6)").
-			Attr("stroke-width", "2").
-			Attr("fill", "none").
-			Attr("style", "fill: none;"))
+		Attr("aria-hidden", "true")
 }
 
 func checkCheckedGlyph() *dom.Element {
 	return dom.NewElement("svg").
 		Class(widget.NameField.Class(widget.PartCheckChecked).String()).
-		Attr("viewBox", "0 0 24 24").
-		Attr("width", "24").
-		Attr("height", "24").
+		Attr("viewBox", "3 3 18 18").
 		Attr("aria-hidden", "true").
-		Child(
-			dom.NewElement("rect").
-				Attr("x", "3").Attr("y", "3").Attr("width", "18").Attr("height", "18").Attr("rx", "4").
-				Attr("fill", "var(--color-primary, #654FF0)").
-				Attr("style", "fill: var(--color-primary, #654FF0);"),
-			dom.NewElement("path").
-				Attr("d", "M7 12.5l3.5 3.5 7-7").
-				Attr("stroke", "var(--color-on-primary, #ffffff)").
-				Attr("stroke-width", "2.5").
-				Attr("stroke-linecap", "round").
-				Attr("stroke-linejoin", "round").
-				Attr("fill", "none").
-				Attr("style", "fill: none;"),
-		)
+		Child(dom.NewElement("path").
+			Attr("d", "M7 12.5l3.5 3.5 7-7").
+			Attr("stroke", "currentColor").
+			Attr("stroke-width", "2.5").
+			Attr("stroke-linecap", "round").
+			Attr("stroke-linejoin", "round").
+			Attr("fill", "none"))
 }
 
 func (fc *fieldComponent) buildDatalist() (*dom.Element, *dom.Element) {
@@ -569,7 +554,10 @@ func applyCommonAttrs(el *dom.Element, fc *fieldComponent) {
 	if ph := inp.GetPlaceholder(); ph != "" {
 		el.Attr("placeholder", ph)
 	}
-	if title := inp.GetTitle(); title != "" {
+	// A title equal to the field name is the generated default, not a tooltip
+	// someone wrote: it would show the technical name on hover and become the
+	// control's accessible name. The visible label already names the control.
+	if title := inp.GetTitle(); title != "" && title != inp.FieldName() {
 		el.Attr("title", title)
 	}
 	for _, attr := range inp.GetAttributes() {

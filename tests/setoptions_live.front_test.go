@@ -48,7 +48,7 @@ func TestSetOptions_AfterRender_RepaintsSelect(t *testing.T) {
 	if sel.IsNull() || sel.IsUndefined() {
 		t.Fatal("select floor_id not rendered")
 	}
-	if n := sel.Get("options").Get("length").Int(); n != 0 {
+	if n := sel.Call("querySelectorAll", "option:not([value=\"\"])").Get("length").Int(); n != 0 {
 		t.Fatalf("before SetOptions: %d options, want 0", n)
 	}
 
@@ -58,7 +58,7 @@ func TestSetOptions_AfterRender_RepaintsSelect(t *testing.T) {
 	)
 
 	sel = doc.Call("querySelector", "#sol-mount select[name='floor_id']")
-	opts := sel.Get("options")
+	opts := sel.Call("querySelectorAll", "option:not([value=\"\"])")
 	if n := opts.Get("length").Int(); n != 2 {
 		t.Fatalf("after SetOptions: live <select> has %d options, want 2 — the choices never reach the screen", n)
 	}

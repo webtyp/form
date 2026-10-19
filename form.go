@@ -36,6 +36,9 @@ type Form struct {
 	baseline           []string                         // last loaded/reset value per input — see IsDirty
 	showFields         []fmt.KeyValue                   // PK field names opted back in via ShowField — see New
 	hiddenPKIndices    []int                            // schema indices of PK fields New skipped — see sync.go
+	carryIndices       []int                            // schema indices of fields with no input and no PK: the form never shows them — see sync.go
+	carried            []string                         // what LoadValues remembered for each carryIndices entry
+	hasCarried         bool                             // a record is loaded: SyncValues writes carried back
 	loadedPK           []string                         // id LoadValues remembered per hidden PK, in hiddenPKIndices order — see sync.go
 }
 
@@ -310,7 +313,8 @@ func New(parentID string, data model.Fielder, idGen model.IDGenerator, opts ...O
 		// Resolve input: use Field.Type asserting to input.Input.
 		inpKind, ok := field.Type.(input.Input)
 		if !ok {
-			continue // skip fields with no UI binding
+			f.carryIndices = append(f.carryIndices, i) // no UI binding: the loaded record carries it
+			continue
 		}
 
 		inp := inpKind.Clone(formID, fieldName)
@@ -369,6 +373,7 @@ func New(parentID string, data model.Fielder, idGen model.IDGenerator, opts ...O
 	// One remembered id per hidden PK, in hiddenPKIndices order — LoadValues
 	// fills it, reset clears it, SyncValues writes it (see sync.go).
 	f.loadedPK = make([]string, len(f.hiddenPKIndices))
+	f.carried = make([]string, len(f.carryIndices))
 
 	if len(f.Inputs) == 0 {
 		return nil, fmt.Errf("form.New: %s has no renderable field — every Field.Type is a "+
@@ -464,6 +469,10 @@ func (f *Form) reset() {
 	for k := range f.loadedPK {
 		f.loadedPK[k] = ""
 	}
+	for k := range f.carried {
+		f.carried[k] = ""
+	}
+	f.hasCarried = false
 	// A full reset also drops any pending focus intent — a host cancelling a
 	// draft (see crudview.undoAction) must leave nothing tracked as focused.
 	f.focused = ""

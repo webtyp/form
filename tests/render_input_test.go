@@ -96,6 +96,16 @@ func Test_Render_BlackBox(t *testing.T) {
 			contain: `<option`,
 		},
 		{
+			t: "Select", name: "offers a prompt while nothing is chosen",
+			opts:    opts12,
+			contain: `Select an option`,
+		},
+		{
+			t: "Radio", name: "names its group for assistive tech",
+			opts:    optsGender,
+			contain: `role='radiogroup'`,
+		},
+		{
 			t: "Select", name: "renders selected when value matches",
 			opts:    opts12,
 			values:  []string{"2"},

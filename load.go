@@ -47,5 +47,16 @@ func (f *Form) LoadValues(data model.Fielder) error {
 		}
 	}
 
+	// The fields the form never renders (a tenant, a timestamp, a position —
+	// anything with no input) belong to the record too: remember them, or
+	// SyncValues would hand the scratch record back with them blank and a save
+	// would overwrite them with nothing.
+	for k, idx := range f.carryIndices {
+		if idx >= 0 && idx < len(values) {
+			f.carried[k] = fmt.Convert(values[idx]).String()
+		}
+	}
+	f.hasCarried = true
+
 	return nil
 }
