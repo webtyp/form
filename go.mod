@@ -9,7 +9,7 @@ require (
 	webtyp.com/input v0.0.20
 	webtyp.com/lang v0.1.6
 	webtyp.com/model v0.2.3
-	webtyp.com/widget v0.6.42
+	webtyp.com/widget v0.6.43
 )
 
 require (
@@ -17,3 +17,5 @@ require (
 	webtyp.com/escape v0.1.0 // indirect
 	webtyp.com/font v0.0.5 // indirect
 )
+
+// TEMP local verification (picker) — remove before commit.
