@@ -30,16 +30,13 @@ type fieldComponent struct {
 	buildOptions func() []*dom.Element
 }
 
-// bindOptions writes the choices as el's children and binds them to a fresh,
-// empty signal that refreshOptions fills later. dom's idiom for seeded rows
-// (see datatable): the serializer emits the static children, and the first
-// Set replaces them wholesale in the live DOM.
+// bindOptions binds el's choices to a signal that already holds the current
+// options. The signal owns the children (dom): the first render, on the server
+// and in the browser, draws exactly what it holds, and refreshOptions replaces
+// them later.
 func (fc *fieldComponent) bindOptions(el *dom.Element, build func() []*dom.Element) {
-	for _, n := range build() {
-		el.Child(n)
-	}
 	fc.buildOptions = build
-	fc.options = dom.NewNodes()
+	fc.options = dom.NewNodes(build()...)
 	el.BindChildren(fc.options)
 }
 
