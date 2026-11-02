@@ -271,6 +271,9 @@ func New(parentID string, data model.Fielder, idGen model.IDGenerator, opts ...O
 			"unixid.NewUnixID() at your composition root, or a test double in tests; form must " +
 			"never construct its own generator (see model.IDGenerator's doc comment)")
 	}
+	if w, ok := data.(model.Wirer); ok && w.Wire() {
+		return nil, fmt.Errf("form.New: %s is a transport format (model.Definition{Wire: true}) — its fields are protocol, not screen text; no form is built from it", resolveStructName(data))
+	}
 	schema := data.Schema()
 	values := model.ReadValues(schema, data.Pointers())
 
