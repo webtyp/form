@@ -50,9 +50,11 @@ func RenderCSS() *css.Stylesheet {
 			style.Glyph(style.Danger),
 			style.FontSize(style.TextXs),
 		).
-		Part(widget.PartHelp,
-			style.Glyph(style.Inactive),
-			style.FontSize(style.TextXs),
+		// The label and the help button on one line; the help text itself is
+		// the tapinfotip panel under the control.
+		Part(widget.PartLabelRow,
+			style.Row(style.Space1),
+			style.StartContent(),
 		).
 		// Field.
 		Part(widget.PartInput,
@@ -184,10 +186,6 @@ func RenderCSS() *css.Stylesheet {
 		WhenWithin(widget.Locked, "", widget.PartCheckOption,
 			style.As(style.Secondary),
 			style.Round(style.RadiusMd),
-		).
-		// Hide help text when error is present.
-		WhenWithin(widget.Invalid, "", widget.PartHelp,
-			style.Hide(),
 		).
 		// No filled state on the field itself: the red message in the corner is
 		// the signal. Painting the whole box danger buried the value.

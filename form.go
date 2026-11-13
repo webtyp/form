@@ -1,6 +1,7 @@
 package form
 
 import (
+	"webtyp.com/components/tapinfotip"
 	"webtyp.com/dom"
 	"webtyp.com/fmt"
 	"webtyp.com/input"
@@ -357,12 +358,16 @@ func New(parentID string, data model.Fielder, idGen model.IDGenerator, opts ...O
 		// called AFTER New() returns (chainable, like HideSubmit) — capturing the
 		// field directly here would freeze it at nil since registration happens
 		// later. The closure re-reads f.onFieldChange at commit time instead.
+		var tip *tapinfotip.TapInfotip
+		if field.Help != "" {
+			tip = &tapinfotip.TapInfotip{Help: lang.Text(field.Help)}
+		}
 		f.children = append(f.children, &fieldComponent{
 			Input:  inp,
 			value:  vSig,
 			err:    eSig,
 			label:  label,
-			help:   field.Help,
+			tip:    tip,
 			locked: f.locked,
 			onCommit: func() {
 				if f.onFieldChange != nil {
@@ -410,7 +415,7 @@ func (f *Form) SetOptions(fieldName string, opts ...fmt.KeyValue) *Form {
 		}
 	}
 	for _, c := range f.children {
-		if fc, ok := c.(*fieldComponent); ok && fc.Input.FieldName() == fieldName {
+		if fc, ok := c.(*fieldComponent); ok && fc.FieldName() == fieldName {
 			fc.refreshOptions()
 		}
 	}

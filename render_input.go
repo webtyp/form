@@ -1,6 +1,7 @@
 package form
 
 import (
+	"webtyp.com/components/tapinfotip"
 	"webtyp.com/dom"
 	"webtyp.com/fmt"
 	"webtyp.com/input"
@@ -14,7 +15,9 @@ type fieldComponent struct {
 	value *dom.SignalString
 	err   *dom.SignalString
 	label string
-	help  string
+	// tip is the field's help (model's Field.Help): its button sits beside the
+	// label and its panel under the control. Nil when the field has no Help.
+	tip *tapinfotip.TapInfotip
 	// locked mirrors the owning Form's whole-form read-only gate (Form.SetLocked).
 	// Shared across every field, so toggling it re-locks/unlocks the entire form.
 	locked *dom.SignalBool
@@ -51,7 +54,7 @@ func (fc *fieldComponent) refreshOptions() {
 // isDisabledOrLocked combines the field's own static disabled flag with the
 // form-wide locked signal — either one disables the rendered control.
 func (fc *fieldComponent) isDisabledOrLocked() bool {
-	return fc.Input.IsDisabled() || (fc.locked != nil && fc.locked.Get())
+	return fc.IsDisabled() || (fc.locked != nil && fc.locked.Get())
 }
 
 func (fc *fieldComponent) String() string {
@@ -99,7 +102,7 @@ func (fc *fieldComponent) validate(val string) {
 			return
 		}
 	}
-	if err := fc.Input.Validate(val); err != nil {
+	if err := fc.Validate(val); err != nil {
 		fc.err.Set(err.Error())
 	} else {
 		fc.err.Set("")
@@ -133,7 +136,7 @@ func (fc *fieldComponent) Render() *dom.Element {
 			}
 		})
 	} else {
-		htmlName := fc.Input.HTMLName()
+		htmlName := fc.HTMLName()
 		switch htmlName {
 		case "radio":
 			control = fc.buildRadio()
@@ -156,12 +159,13 @@ func (fc *fieldComponent) Render() *dom.Element {
 	// gap beside a neighbour that does have a label.
 	htmlName := ""
 	if _, custom := fc.Input.(Renderer); !custom {
-		htmlName = fc.Input.HTMLName()
+		htmlName = fc.HTMLName()
 	}
+	var label *dom.Element
 	if htmlName == "checkbox" {
 		container.SetState(widget.SpanFull)
 	} else if lbl := fc.labelText(); lbl != "" && control != nil {
-		label := dom.NewElement("label").
+		label = dom.NewElement("label").
 			Class(widget.NameField.Class(widget.PartLabel).String()).
 			Text(lbl)
 		if htmlName == "radio" {
@@ -169,35 +173,55 @@ func (fc *fieldComponent) Render() *dom.Element {
 		} else {
 			label.For(control)
 		}
+	}
+
+	// The help button shares the label's line. A field with Help always has
+	// the line, even without a label, so the button never floats alone.
+	// A lone checkbox has no label above, so its button shares the line of the
+	// option itself (see where the control is added below).
+	loneCheckbox := htmlName == "checkbox"
+	if fc.tip != nil && control != nil && !loneCheckbox {
+		row := dom.NewElement("div").Class(widget.NameField.Class(widget.PartLabelRow).String())
+		if label != nil {
+			row.Child(label)
+		}
+		row.Child(fc.tip.Button())
+		container.Child(row)
+	} else if label != nil {
 		container.Child(label)
 	}
 
 	errSpan := dom.NewElement("span").
-		ID(fc.Input.ErrorID()).
+		ID(fc.ErrorID()).
 		Class(widget.NameField.Class(widget.PartError).String()).
 		Attr("aria-live", "polite").
 		BindText(fc.err)
 
-	var helpEl *dom.Element
-	if fc.help != "" {
-		helpEl = dom.NewElement("small").
-			Class(widget.NameField.Class(widget.PartHelp).String()).
-			Text(lang.Translate(fc.help).String())
+	// The help text opens under the control, only when its button is tapped.
+	var panel *dom.Element
+	if fc.tip != nil {
+		panel = fc.tip.Panel()
 	}
 
 	if control != nil {
-		if helpEl != nil {
-			control.DescribedBy(helpEl, errSpan)
+		if panel != nil {
+			control.DescribedBy(panel, errSpan)
 		} else {
 			control.DescribedBy(errSpan)
 		}
-		container.Child(control)
+		if loneCheckbox && fc.tip != nil {
+			container.Child(dom.NewElement("div").
+				Class(widget.NameField.Class(widget.PartLabelRow).String()).
+				Child(control, fc.tip.Button()))
+		} else {
+			container.Child(control)
+		}
 	}
 	if extra != nil {
 		container.Child(extra)
 	}
-	if helpEl != nil {
-		container.Child(helpEl)
+	if panel != nil {
+		container.Child(panel)
 	}
 
 	container.Child(errSpan)
@@ -206,7 +230,7 @@ func (fc *fieldComponent) Render() *dom.Element {
 
 func (fc *fieldComponent) buildInput() (*dom.Element, *dom.Element) {
 	tag := "input"
-	htmlName := fc.Input.HTMLName()
+	htmlName := fc.HTMLName()
 	if htmlName == "textarea" {
 		tag = "textarea"
 	}
@@ -214,7 +238,7 @@ func (fc *fieldComponent) buildInput() (*dom.Element, *dom.Element) {
 	el := dom.NewElement(tag).
 		ID(fc.Input.GetID()).
 		Class(widget.NameField.Class(widget.PartInput).String()).
-		Attr("name", fc.Input.FieldName())
+		Attr("name", fc.FieldName())
 
 	if htmlName == "textarea" {
 		el.Class(widget.NameField.Class(widget.PartTextarea).String())
@@ -317,9 +341,9 @@ func (fc *fieldComponent) buildSelect() *dom.Element {
 	el := dom.NewElement("select").
 		ID(fc.Input.GetID()).
 		Class(widget.NameField.Class(widget.PartInput).String(), widget.NameField.Class(widget.PartSelect).String()).
-		Attr("name", fc.Input.FieldName())
+		Attr("name", fc.FieldName())
 
-	if fc.Input.IsRequired() {
+	if fc.IsRequired() {
 		el.Attr("required", "")
 	}
 	el.BindAttrBoolFunc("disabled", fc.isDisabledOrLocked)
@@ -337,7 +361,7 @@ func (fc *fieldComponent) buildSelect() *dom.Element {
 
 	fc.bindOptions(el, func() []*dom.Element {
 		val := fc.value.Get()
-		opts := fc.Input.GetOptions()
+		opts := fc.GetOptions()
 		nodes := make([]*dom.Element, 0, len(opts)+1)
 		// With no value chosen the select shows a prompt instead of silently
 		// presenting its first option as if it had been picked. A required field
@@ -349,7 +373,7 @@ func (fc *fieldComponent) buildSelect() *dom.Element {
 			if val == "" {
 				prompt.Attr("selected", "")
 			}
-			if fc.Input.IsRequired() {
+			if fc.IsRequired() {
 				prompt.Attr("disabled", "")
 			}
 			nodes = append(nodes, prompt)
@@ -381,7 +405,7 @@ func (fc *fieldComponent) buildRadio() *dom.Element {
 		Class(widget.NameField.Class(widget.PartRadioGroup).String())
 	fc.bindOptions(group, func() []*dom.Element {
 		val := fc.value.Get()
-		opts := fc.Input.GetOptions()
+		opts := fc.GetOptions()
 		nodes := make([]*dom.Element, 0, len(opts))
 		for _, opt := range opts {
 			optKey := opt.Key
@@ -390,7 +414,7 @@ func (fc *fieldComponent) buildRadio() *dom.Element {
 			radio := dom.NewElement("input").
 				Attr("type", "radio").
 				Class(widget.NameField.Class(widget.PartRadioNative).String()).
-				Attr("name", fc.Input.FieldName()).
+				Attr("name", fc.FieldName()).
 				Attr("value", optKey)
 
 			if val != "" && optKey == val {
@@ -437,7 +461,7 @@ func (fc *fieldComponent) buildCheckbox() *dom.Element {
 		Attr("type", "checkbox").
 		ID(fc.Input.GetID()).
 		Class(widget.NameField.Class(widget.PartCheckNative).String()).
-		Attr("name", fc.Input.FieldName())
+		Attr("name", fc.FieldName())
 
 	if isChecked {
 		chk.Attr("checked", "")
@@ -473,7 +497,7 @@ func (fc *fieldComponent) buildCheckbox() *dom.Element {
 	label.Child(chk)
 	label.Child(checkUncheckedGlyph())
 	label.Child(checkCheckedGlyph())
-	txt := fc.Input.GetPlaceholder()
+	txt := fc.GetPlaceholder()
 	if txt == "" {
 		txt = lang.Translate(fc.label).String()
 	}
@@ -512,7 +536,7 @@ func (fc *fieldComponent) buildDatalist() (*dom.Element, *dom.Element) {
 		Attr("type", "text").
 		ID(fc.Input.GetID()).
 		Class(widget.NameField.Class(widget.PartInput).String()).
-		Attr("name", fc.Input.FieldName()).
+		Attr("name", fc.FieldName()).
 		Attr("list", listID)
 
 	// Two-way binding
@@ -536,7 +560,7 @@ func (fc *fieldComponent) buildDatalist() (*dom.Element, *dom.Element) {
 	// dom exposes (*Element).For for for=, but nothing equivalent for list= / aria-describedby / aria-labelledby yet.
 	datalist := dom.NewElement("datalist").ID(listID)
 	fc.bindOptions(datalist, func() []*dom.Element {
-		opts := fc.Input.GetOptions()
+		opts := fc.GetOptions()
 		nodes := make([]*dom.Element, 0, len(opts))
 		for _, opt := range opts {
 			nodes = append(nodes, dom.NewElement("option").Attr("value", opt.Key).Text(lang.Translate(opt.Value).String()))

@@ -45,16 +45,26 @@ func runLabelTests(t *testing.T) {
 	})
 
 	t.Run("Help text rendering", func(t *testing.T) {
-		// Single quotes for attributes!
-		if !strings.Contains(html, "class='vy-field__help'") {
-			t.Errorf("Expected class='vy-field__help', got: %s", html)
-		}
+		// The help text is in the markup, hidden until its (i) is tapped: the
+		// button starts collapsed and names the panel it opens.
 		if !strings.Contains(html, "Format: 192.168.1.1") {
 			t.Errorf("Expected Format: 192.168.1.1, got: %s", html)
 		}
-		// The help text adds itself to aria-describedby
+		if !strings.Contains(html, "aria-expanded='false'") {
+			t.Errorf("Expected the help button to start collapsed, got: %s", html)
+		}
+		if !strings.Contains(html, "aria-controls=") {
+			t.Errorf("Expected the help button to name its panel, got: %s", html)
+		}
+		// The control is described by the help text
 		if !strings.Contains(html, "aria-describedby=") {
 			t.Errorf("Expected aria-describedby, got: %s", html)
+		}
+	})
+
+	t.Run("Field without Help has no help button", func(t *testing.T) {
+		if strings.Count(html, "aria-expanded=") != 1 {
+			t.Errorf("Expected exactly one help button (the IP field), got: %s", html)
 		}
 	})
 }

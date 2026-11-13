@@ -1,7 +1,7 @@
 {
-  "languages": ["es"],
+  "languages": ["es", "zh", "hi", "ar", "pt", "fr", "de", "ru"],
   "keys": {
-    "Select an option": ["Selecciona una opción"],
-    "Submit": ["Enviar"]
+    "Select an option": ["Selecciona una opción", "", "", "", "", "", "", ""],
+    "Submit": ["Enviar", "", "", "", "", "", "", ""]
   }
 }
