@@ -4,6 +4,7 @@ go 1.26.8
 
 require (
 	webtyp.com/components v0.0.0-00010101000000-000000000000
+	webtyp.com/country v0.0.1
 	webtyp.com/css v0.4.30
 	webtyp.com/dom v0.13.29
 	webtyp.com/fmt v1.0.0
@@ -16,6 +17,7 @@ require (
 require (
 	webtyp.com/color v0.1.2 // indirect
 	webtyp.com/escape v0.1.0 // indirect
+	webtyp.com/filetype v0.1.1 // indirect
 	webtyp.com/font v0.0.5 // indirect
 	webtyp.com/html v0.0.30 // indirect
 	webtyp.com/icons v0.0.33 // indirect
@@ -31,3 +33,9 @@ replace webtyp.com/components => ../components
 replace webtyp.com/icons => ../icons
 
 replace webtyp.com/widget => ../widget
+
+replace webtyp.com/model => ../model
+
+replace webtyp.com/input => ../input
+
+replace webtyp.com/country => ../country

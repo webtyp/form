@@ -26,6 +26,8 @@ func RenderCSS() *css.Stylesheet {
 			style.Stack(style.Space1),
 			style.KeepSize(),
 		).
+		// A field its ShownWhen leaves out takes no room.
+		When(widget.Hidden, "", style.Hide()).
 		// The form: the one place the inter-field rhythm lives. A gap on the
 		// container spaces every field the same and — unlike a per-field
 		// margin — does not double up at the first and last field against the
@@ -55,6 +57,16 @@ func RenderCSS() *css.Stylesheet {
 		Part(widget.PartLabelRow,
 			style.Row(style.Space1),
 			style.StartContent(),
+		).
+		// The phone: prefix and number on one line; the number takes the rest.
+		Part(widget.PartPhone,
+			style.Row(style.Space2),
+		).
+		Part(widget.PartPrefix,
+			style.KeepSize(),
+		).
+		Part(widget.PartNumber,
+			style.Grow(),
 		).
 		// Field.
 		Part(widget.PartInput,

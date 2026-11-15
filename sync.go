@@ -19,6 +19,9 @@ func (f *Form) SyncValues(data model.Fielder) error {
 
 		// Signal is the source of truth in WASM mode.
 		val := f.valueSignals[i].Get()
+		if !f.shown(i) {
+			val = "" // a hidden field travels empty (see ShownWhen)
+		}
 
 		// Fallback only if we are somehow in SSR mode where signals might be empty
 		// but input state is populated (though f.Render() should handle this).

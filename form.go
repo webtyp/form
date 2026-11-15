@@ -41,6 +41,8 @@ type Form struct {
 	carried            []string                         // what LoadValues remembered for each carryIndices entry
 	hasCarried         bool                             // a record is loaded: SyncValues writes carried back
 	loadedPK           []string                         // id LoadValues remembered per hidden PK, in hiddenPKIndices order — see sync.go
+	whens              []model.When                     // Field.ShownWhen per input — see shown
+	whenFrom           []int                            // input index each When reads, -1 when the field is always shown
 }
 
 // Option configures New. The only kind today is ShowField.
@@ -302,6 +304,7 @@ func New(parentID string, data model.Fielder, idGen model.IDGenerator, opts ...O
 		opt(f)
 	}
 
+	var alsoSets []string // Field.AlsoSetsField per input, same order as Inputs
 	for i, field := range schema {
 		// Skip primary keys by default, auto-increment or not: an id is
 		// normally system-assigned/opaque, and rendering an editable box for
@@ -342,6 +345,8 @@ func New(parentID string, data model.Fielder, idGen model.IDGenerator, opts ...O
 		eSig := dom.NewString("")
 
 		f.Inputs = append(f.Inputs, inp)
+		f.whens = append(f.whens, field.ShownWhen)
+		alsoSets = append(alsoSets, field.AlsoSetsField)
 		f.valueSignals = append(f.valueSignals, vSig)
 		f.errorSignals = append(f.errorSignals, eSig)
 		f.baseline = append(f.baseline, val)
@@ -370,12 +375,17 @@ func New(parentID string, data model.Fielder, idGen model.IDGenerator, opts ...O
 			tip:    tip,
 			locked: f.locked,
 			onCommit: func() {
+				f.reconcileShown()
 				if f.onFieldChange != nil {
 					f.onFieldChange()
 				}
 			},
 		})
 		f.fieldIndices = append(f.fieldIndices, i)
+	}
+
+	if err := f.wireFieldLinks(structName, alsoSets); err != nil {
+		return nil, err
 	}
 
 	// One remembered id per hidden PK, in hiddenPKIndices order — LoadValues
@@ -462,7 +472,7 @@ func (f *Form) resolveSubmitLabel() string {
 func (f *Form) reset() {
 	// Reset signals
 	for i, inp := range f.Inputs {
-		f.valueSignals[i].Set("")
+		f.setValue(i, "")
 		f.errorSignals[i].Set("")
 		f.baseline[i] = "" // a reset form is pristine — see IsDirty
 
@@ -495,7 +505,7 @@ func (f *Form) SetValues(fieldName string, values ...string) *Form {
 				if len(values) > 0 {
 					val = values[0]
 				}
-				f.valueSignals[i].Set(val)
+				f.setValue(i, val)
 				if setter, ok := inp.(interface{ SetValues(...string) }); ok {
 					setter.SetValues(values...)
 				}
@@ -504,4 +514,99 @@ func (f *Form) SetValues(fieldName string, values ...string) *Form {
 		}
 	}
 	return f
+}
+
+// indexOfInput is the position of the input named fieldName, or -1.
+func (f *Form) indexOfInput(fieldName string) int {
+	for i, inp := range f.Inputs {
+		if inp.FieldName() == fieldName {
+			return i
+		}
+	}
+	return -1
+}
+
+// wireFieldLinks resolves what one field declares about another — ShownWhen
+// (which field decides whether it shows) and AlsoSetsField (which field its input
+// also writes) — and fails at New when a name is wrong or the input cannot do
+// it: a typo must not become a field that silently never hides or never sets.
+func (f *Form) wireFieldLinks(structName string, alsoSets []string) error {
+	f.whenFrom = make([]int, len(f.Inputs))
+	for i, w := range f.whens {
+		f.whenFrom[i] = -1
+		if w.IsZero() {
+			continue
+		}
+		j := f.indexOfInput(w.Field)
+		if j < 0 || j == i {
+			return fmt.Errf("form.New: %s.%s ShownWhen names %q, which is not another field of the form",
+				structName, f.Inputs[i].FieldName(), w.Field)
+		}
+		f.whenFrom[i] = j
+		if fc, ok := f.children[i].(*fieldComponent); ok {
+			idx := i
+			fc.hidden = func() bool { return !f.shown(idx) }
+		}
+	}
+	for i, name := range alsoSets {
+		if name == "" {
+			continue
+		}
+		j := f.indexOfInput(name)
+		if j < 0 || j == i {
+			return fmt.Errf("form.New: %s.%s AlsoSetsField names %q, which is not another field of the form",
+				structName, f.Inputs[i].FieldName(), name)
+		}
+		binder, ok := f.Inputs[i].(input.AlsoSetter)
+		if !ok {
+			return fmt.Errf("form.New: %s.%s declares AlsoSetsField, but its input does not implement input.AlsoSetter",
+				structName, f.Inputs[i].FieldName())
+		}
+		target := j
+		binder.BindAlsoSets(func(value string) { f.setAt(target, value) })
+	}
+	return nil
+}
+
+// setAt writes a value into the input at index i the way the person would
+// have: the signal every binding reads, and the input's own state.
+func (f *Form) setAt(i int, value string) {
+	f.setValue(i, value)
+	if setter, ok := f.Inputs[i].(interface{ SetValues(...string) }); ok {
+		setter.SetValues(value)
+	}
+}
+
+// shown reports whether the field at index i is shown: always, unless it
+// declares a ShownWhen the other field's current value does not satisfy.
+func (f *Form) shown(i int) bool {
+	if i >= len(f.whenFrom) || f.whenFrom[i] < 0 {
+		return true
+	}
+	return f.whens[i].Holds(f.valueSignals[f.whenFrom[i]].Get())
+}
+
+// reconcileShown empties every field that is no longer shown and clears its
+// error: a hidden field must not keep a value the person can no longer see or fix.
+func (f *Form) reconcileShown() {
+	for i := range f.Inputs {
+		if f.shown(i) {
+			continue
+		}
+		if f.valueSignals[i].Get() != "" {
+			f.setAt(i, "")
+		}
+		f.errorSignals[i].Set("")
+	}
+}
+
+// setValue writes a value into the field at index i from outside the control
+// (a loaded record, a reset, SetValues, another field's AlsoSetsField): the
+// signal every binding reads, plus the control's own repaint when it keeps
+// derived state (the phone's prefix and number).
+func (f *Form) setValue(i int, v string) {
+	f.valueSignals[i].Set(v)
+	if fc, ok := f.children[i].(*fieldComponent); ok && fc.onValueSet != nil {
+		fc.onValueSet(v)
+	}
 }

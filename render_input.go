@@ -2,6 +2,7 @@ package form
 
 import (
 	"webtyp.com/components/tapinfotip"
+	"webtyp.com/country"
 	"webtyp.com/dom"
 	"webtyp.com/fmt"
 	"webtyp.com/input"
@@ -21,6 +22,15 @@ type fieldComponent struct {
 	// locked mirrors the owning Form's whole-form read-only gate (Form.SetLocked).
 	// Shared across every field, so toggling it re-locks/unlocks the entire form.
 	locked *dom.SignalBool
+	// hidden reports whether Field.ShownWhen leaves this field out right now.
+	// Nil when the field is always shown.
+	hidden func() bool
+	// onValueSet repaints a control that keeps state derived from the value (the
+	// phone). Nil for every other control; set when the control is built.
+	onValueSet func(string)
+	// focusEl is the element a label points at and aria-describedby names when the
+	// control is a group (the phone row): its inner input. Nil otherwise.
+	focusEl *dom.Element
 	// onCommit fires when the user finishes editing this field (blur for
 	// text/textarea/datalist, change for select/radio) — the auto-save hook set
 	// via Form.OnFieldChange. Nil when the form has none registered.
@@ -79,8 +89,9 @@ func (fc *fieldComponent) Children() []dom.Component {
 
 // Renderer is an optional capability for custom inputs that own their markup.
 // The form still owns the field wrapper (the field wrapper div), the error span, and
-// validation: the widget must call onInput with the new value on user input —
-// the form updates the value signal and runs live validation. The value
+// validation: the widget must call onInput with the new value when the person
+// finishes editing it (a commit, like blur: never per keystroke) — the form
+// updates the value signal, validates it and fires the commit (auto-save). The value
 // signal carries the initial value and programmatic updates (SetValues).
 type Renderer interface {
 	RenderInput(value *dom.SignalString, onInput func(string)) *dom.Element
@@ -119,7 +130,8 @@ func (fc *fieldComponent) Render() *dom.Element {
 	container := dom.NewElement("div").
 		Class(widget.NameField.Root().String()).
 		BindStateFunc(widget.Invalid, func() bool { return fc.err.Get() != "" }).
-		BindStateFunc(widget.Locked, fc.isDisabledOrLocked)
+		BindStateFunc(widget.Locked, fc.isDisabledOrLocked).
+		BindStateFunc(widget.Hidden, func() bool { return fc.hidden != nil && fc.hidden() })
 
 	if spanner, ok := fc.Input.(interface{ IsFullWidth() bool }); ok && spanner.IsFullWidth() {
 		container.SetState(widget.SpanFull)
@@ -131,8 +143,9 @@ func (fc *fieldComponent) Render() *dom.Element {
 	if r, ok := fc.Input.(Renderer); ok {
 		control = r.RenderInput(fc.value, func(v string) {
 			fc.value.Set(v)
-			if fc.err.Get() != "" {
-				fc.validate(v)
+			fc.validate(v)
+			if fc.onCommit != nil {
+				fc.onCommit()
 			}
 		})
 	} else {
@@ -144,6 +157,8 @@ func (fc *fieldComponent) Render() *dom.Element {
 			control = fc.buildCheckbox()
 		case "select":
 			control = fc.buildSelect()
+		case "tel":
+			control, extra = fc.buildPhone()
 		case "datalist":
 			control, extra = fc.buildDatalist()
 		default:
@@ -171,7 +186,7 @@ func (fc *fieldComponent) Render() *dom.Element {
 		if htmlName == "radio" {
 			control.Attr("role", "radiogroup").Attr("aria-labelledby", label.GetID())
 		} else {
-			label.For(control)
+			label.For(fc.labelTarget(control))
 		}
 	}
 
@@ -205,9 +220,9 @@ func (fc *fieldComponent) Render() *dom.Element {
 
 	if control != nil {
 		if panel != nil {
-			control.DescribedBy(panel, errSpan)
+			fc.labelTarget(control).DescribedBy(panel, errSpan)
 		} else {
-			control.DescribedBy(errSpan)
+			fc.labelTarget(control).DescribedBy(errSpan)
 		}
 		if loneCheckbox && fc.tip != nil {
 			container.Child(dom.NewElement("div").
@@ -609,4 +624,99 @@ func RenderInput(inp input.Input) *dom.Element {
 	}
 	// Note: this Render() returns the field wrapper div containing the input + error span.
 	return fc.Render()
+}
+
+// labelTarget is the element a label points at: the control, or the inner input
+// of a group control (the phone row).
+func (fc *fieldComponent) labelTarget(control *dom.Element) *dom.Element {
+	if fc.focusEl != nil {
+		return fc.focusEl
+	}
+	return control
+}
+
+// buildPhone draws the phone field: a select of dial prefixes and the national
+// number. The choices are the app's (view.WithOptions on this field, built with
+// country.Catalog.PrefixOptions) and the first one is the default country. The
+// value the field holds is always the international form, "+56911111111"; the
+// person never types the prefix. With no choices the field is one box where the
+// number is typed with its "+".
+func (fc *fieldComponent) buildPhone() (*dom.Element, *dom.Element) {
+	opts := fc.GetOptions()
+	if len(opts) == 0 {
+		return fc.buildInput()
+	}
+	defaultCode := opts[0].Key
+	code, national := splitPhone(fc.value.Get(), defaultCode)
+	prefix := dom.NewString(code)
+	number := dom.NewString(national)
+	fc.onValueSet = func(v string) {
+		c, n := splitPhone(v, defaultCode)
+		prefix.Set(c)
+		number.Set(n)
+	}
+	compose := func() {
+		next := ""
+		if digits := onlyDigits(number.Get()); digits != "" {
+			if c, ok := country.Find(prefix.Get()); ok {
+				next = "+" + c.Dial + digits
+			}
+		}
+		fc.value.Set(next)
+		fc.validate(next)
+		if fc.onCommit != nil {
+			fc.onCommit()
+		}
+	}
+
+	sel := dom.NewElement("select").
+		Class(widget.NameField.Class(widget.PartInput).String(), widget.NameField.Class(widget.PartSelect).String(), widget.NameField.Class(widget.PartPrefix).String()).
+		Attr("aria-label", lang.Translate("Country prefix").String()).
+		BindAttrBoolFunc("disabled", fc.isDisabledOrLocked).
+		Bind(prefix).
+		OnChange(func(e dom.Event) {
+			prefix.Set(e.TargetValue())
+			compose()
+		})
+	for _, opt := range opts {
+		sel.Child(dom.NewElement("option").Attr("value", opt.Key).Text(opt.Value))
+	}
+
+	num := dom.NewElement("input").
+		ID(fc.Input.GetID()).
+		Attr("type", "tel").
+		Attr("inputmode", "tel").
+		Attr("autocomplete", "tel-national").
+		Attr("name", fc.FieldName()).
+		Class(widget.NameField.Class(widget.PartInput).String(), widget.NameField.Class(widget.PartNumber).String()).
+		BindAttrBoolFunc("disabled", fc.isDisabledOrLocked).
+		Bind(number).
+		OnChange(func(e dom.Event) {
+			number.Set(e.TargetValue())
+			compose()
+		})
+	fc.focusEl = num
+
+	return dom.NewElement("div").Class(widget.NameField.Class(widget.PartPhone).String()).Child(sel, num), nil
+}
+
+// splitPhone reads a stored value into the prefix's country code and the
+// national digits. An empty value, or one that is not international (an old
+// record typed without "+"), shows the default country with the digits it has.
+func splitPhone(value, defaultCode string) (code, national string) {
+	if c, rest, ok := country.Split(value); ok {
+		return c.Code, rest
+	}
+	return defaultCode, onlyDigits(value)
+}
+
+// onlyDigits keeps the digits of what the person typed.
+func onlyDigits(typed string) string {
+	out := make([]byte, 0, len(typed))
+	for i := 0; i < len(typed); i++ {
+		if typed[i] >= '0' && typed[i] <= '9' {
+			out = append(out, typed[i])
+		}
+	}
+	return string(out)
 }

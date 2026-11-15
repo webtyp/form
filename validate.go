@@ -11,6 +11,11 @@ package form
 func (f *Form) Validate() error {
 	var first error
 	for i, inp := range f.Inputs {
+		// A field the form is not showing is not validated (see ShownWhen).
+		if !f.shown(i) {
+			f.errorSignals[i].Set("")
+			continue
+		}
 		// Skip validation if requested via tag
 		if skipper, ok := inp.(interface{ GetSkipValidation() bool }); ok && skipper.GetSkipValidation() {
 			continue
