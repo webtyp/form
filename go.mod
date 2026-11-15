@@ -3,15 +3,15 @@ module webtyp.com/form
 go 1.26.8
 
 require (
-	webtyp.com/components v0.0.0-00010101000000-000000000000
-	webtyp.com/country v0.0.1
+	webtyp.com/components v0.8.74
+	webtyp.com/country v0.0.2
 	webtyp.com/css v0.4.30
 	webtyp.com/dom v0.13.29
-	webtyp.com/fmt v1.0.0
-	webtyp.com/input v0.0.36
+	webtyp.com/fmt v1.0.2
+	webtyp.com/input v0.2.3
 	webtyp.com/lang v0.1.16
-	webtyp.com/model v0.2.21
-	webtyp.com/widget v0.6.46
+	webtyp.com/model v0.2.22
+	webtyp.com/widget v0.6.48
 )
 
 require (
@@ -19,23 +19,9 @@ require (
 	webtyp.com/escape v0.1.0 // indirect
 	webtyp.com/filetype v0.1.1 // indirect
 	webtyp.com/font v0.0.5 // indirect
-	webtyp.com/html v0.0.30 // indirect
-	webtyp.com/icons v0.0.33 // indirect
+	webtyp.com/icons v0.0.42 // indirect
 	webtyp.com/json v0.5.40 // indirect
 	webtyp.com/svg v0.3.30 // indirect
 )
 
 // TEMP local verification (picker) — remove before commit.
-
-// TEMP local verification (tapinfotip, label-row) — remove before commit.
-replace webtyp.com/components => ../components
-
-replace webtyp.com/icons => ../icons
-
-replace webtyp.com/widget => ../widget
-
-replace webtyp.com/model => ../model
-
-replace webtyp.com/input => ../input
-
-replace webtyp.com/country => ../country
