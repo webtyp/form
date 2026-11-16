@@ -138,12 +138,27 @@ func (f *Form) SetLocked(v bool) *Form {
 // already exists by the time a host unlocks it (this never runs on first
 // mount), so a direct dom.Get+Focus is enough — no binding needed.
 func (f *Form) Focus() *Form {
-	if len(f.Inputs) == 0 {
+	return f.focusFrom(0)
+}
+
+// focusFrom moves focus to the first focusable control at or after field i —
+// the ONE "next focusable control" rule: Focus (the «+» button) starts at 0,
+// a radio chosen with the pointer starts after its own field. Fields the form
+// is not showing are skipped; with nothing after i, focus stays where it is.
+func (f *Form) focusFrom(i int) *Form {
+	for ; i < len(f.children); i++ {
+		if !f.shown(i) {
+			continue
+		}
+		fc, ok := f.children[i].(*fieldComponent)
+		if !ok {
+			continue
+		}
+		f.focused = fc.focusID()
+		if ref, ok := dom.Get(f.focused); ok {
+			ref.Focus()
+		}
 		return f
-	}
-	f.focused = f.Inputs[0].GetID()
-	if ref, ok := dom.Get(f.focused); ok {
-		ref.Focus()
 	}
 	return f
 }
@@ -326,6 +341,13 @@ func New(parentID string, data model.Fielder, idGen model.IDGenerator, opts ...O
 
 		inp := inpKind.Clone(formID, fieldName)
 
+		// The rules the field declares govern the control, as on the server.
+		if b, ok := inp.(interface{ SetPermitted(model.Permitted) }); ok {
+			if base, ok := inp.(interface{ Rules() model.Permitted }); ok {
+				b.SetPermitted(field.PermittedOver(base.Rules()))
+			}
+		}
+
 		// Apply constraint-based defaults from schema
 		if field.NotNull {
 			if b, ok := inp.(interface{ SetRequired(bool) }); ok {
@@ -367,13 +389,15 @@ func New(parentID string, data model.Fielder, idGen model.IDGenerator, opts ...O
 		if field.Help != "" {
 			tip = &tapinfotip.TapInfotip{Help: lang.Text(field.Help)}
 		}
+		at := len(f.children)
 		f.children = append(f.children, &fieldComponent{
-			Input:  inp,
-			value:  vSig,
-			err:    eSig,
-			label:  label,
-			tip:    tip,
-			locked: f.locked,
+			Input:    inp,
+			onPicked: func() { f.focusFrom(at + 1) },
+			value:    vSig,
+			err:      eSig,
+			label:    label,
+			tip:      tip,
+			locked:   f.locked,
 			onCommit: func() {
 				f.reconcileShown()
 				if f.onFieldChange != nil {

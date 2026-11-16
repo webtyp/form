@@ -41,6 +41,35 @@ type fieldComponent struct {
 	// Nil until a choice control is built.
 	options      *dom.SignalNodes
 	buildOptions func() []*dom.Element
+	// radios are the live options of a radio group, in order (rebuilt with the
+	// choices); radioKeys holds the value each one stands for.
+	radios    []*dom.Element
+	radioKeys []string
+	// onPicked fires after a radio option was chosen with the pointer (never
+	// with the keyboard's arrows): the form moves focus to the next field.
+	onPicked func()
+	// pointerPick is set by a pointer press on an option and consumed by the
+	// change it causes, so a change from the arrow keys is told apart.
+	pointerPick bool
+}
+
+// focusID is the id of the control that takes focus when the person enters
+// this field: the control itself, or for a radio group the checked option
+// (the first when none is), because the group's div is not focusable.
+func (fc *fieldComponent) focusID() string {
+	if len(fc.radios) == 0 {
+		if fc.focusEl != nil {
+			return fc.focusEl.GetID()
+		}
+		return fc.Input.GetID()
+	}
+	val := fc.value.Get()
+	for i, k := range fc.radioKeys {
+		if k == val && val != "" {
+			return fc.radios[i].GetID()
+		}
+	}
+	return fc.radios[0].GetID()
 }
 
 // bindOptions binds el's choices to a signal that already holds the current
@@ -180,11 +209,22 @@ func (fc *fieldComponent) Render() *dom.Element {
 	if htmlName == "checkbox" {
 		container.SetState(widget.SpanFull)
 	} else if lbl := fc.labelText(); lbl != "" && control != nil {
-		label = dom.NewElement("label").
+		// A group names itself with aria-labelledby, so its title is not a
+		// <label> (a label that points at no control is an HTML issue).
+		_, custom := fc.Input.(Renderer)
+		tag := "label"
+		if htmlName == "radio" || (custom && fc.focusEl == nil) {
+			tag = "span"
+		}
+		label = dom.NewElement(tag).
 			Class(widget.NameField.Class(widget.PartLabel).String()).
 			Text(lbl)
 		if htmlName == "radio" {
 			control.Attr("role", "radiogroup").Attr("aria-labelledby", label.GetID())
+		} else if _, custom := fc.Input.(Renderer); custom && fc.focusEl == nil {
+			// A custom control is a wrapper of several inputs, not labelable: it
+			// names itself as a group (a label for= pointing at a div is invalid).
+			control.Attr("role", "group").Attr("aria-labelledby", label.GetID())
 		} else {
 			label.For(fc.labelTarget(control))
 		}
@@ -253,7 +293,8 @@ func (fc *fieldComponent) buildInput() (*dom.Element, *dom.Element) {
 	el := dom.NewElement(tag).
 		ID(fc.Input.GetID()).
 		Class(widget.NameField.Class(widget.PartInput).String()).
-		Attr("name", fc.FieldName())
+		Attr("name", fc.FieldName()).
+		Attr("autocomplete", autocompleteFor(htmlName))
 
 	if htmlName == "textarea" {
 		el.Class(widget.NameField.Class(widget.PartTextarea).String())
@@ -352,11 +393,28 @@ func eyeGlyph() *dom.Element {
 			Attr("d", "M12 5C5 5 1 12 1 12s4 7 11 7 11-7 11-7-4-7-11-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"))
 }
 
+// autocompleteFor is the autofill hint of a text control, by its HTML type.
+// Only a type that names the person's own data gets a token (email, tel,
+// password); everything else describes a record about someone else (a patient,
+// a product), where the browser's autofill would write the wrong data, so "off".
+func autocompleteFor(htmlName string) string {
+	switch htmlName {
+	case "email":
+		return "email"
+	case "tel":
+		return "tel"
+	case "password":
+		return "current-password"
+	}
+	return "off"
+}
+
 func (fc *fieldComponent) buildSelect() *dom.Element {
 	el := dom.NewElement("select").
 		ID(fc.Input.GetID()).
 		Class(widget.NameField.Class(widget.PartInput).String(), widget.NameField.Class(widget.PartSelect).String()).
-		Attr("name", fc.FieldName())
+		Attr("name", fc.FieldName()).
+		Attr("autocomplete", "off")
 
 	if fc.IsRequired() {
 		el.Attr("required", "")
@@ -422,6 +480,8 @@ func (fc *fieldComponent) buildRadio() *dom.Element {
 		val := fc.value.Get()
 		opts := fc.GetOptions()
 		nodes := make([]*dom.Element, 0, len(opts))
+		fc.radios = fc.radios[:0]
+		fc.radioKeys = fc.radioKeys[:0]
 		for _, opt := range opts {
 			optKey := opt.Key
 			optVal := opt.Value
@@ -444,17 +504,28 @@ func (fc *fieldComponent) buildRadio() *dom.Element {
 
 			radio.OnChange(func(e dom.Event) {
 				if e.TargetChecked() {
+					byPointer := fc.pointerPick
+					fc.pointerPick = false
 					fc.value.Set(optKey)
 					fc.validate(optKey)
 					if fc.onCommit != nil {
 						fc.onCommit()
 					}
+					if byPointer && fc.onPicked != nil {
+						fc.onPicked()
+					}
 				}
 			})
+			radio.OnKeyDown(func(dom.KeyEvent) { fc.pointerPick = false })
+			fc.radios = append(fc.radios, radio)
+			fc.radioKeys = append(fc.radioKeys, optKey)
 
 			label := dom.NewElement("label").
 				For(radio).
 				Class(widget.NameField.Class(widget.PartRadioOption).String()).
+				// The press lands on the label (the radio itself is the hidden
+				// native control), so the pointer is told apart there.
+				OnPointerDown(func(dom.Event) { fc.pointerPick = true }).
 				BindStateFunc(widget.Selected, func() bool {
 					return fc.value.Get() == optKey
 				})
@@ -552,6 +623,7 @@ func (fc *fieldComponent) buildDatalist() (*dom.Element, *dom.Element) {
 		ID(fc.Input.GetID()).
 		Class(widget.NameField.Class(widget.PartInput).String()).
 		Attr("name", fc.FieldName()).
+		Attr("autocomplete", "off").
 		Attr("list", listID)
 
 	// Two-way binding
@@ -672,6 +744,7 @@ func (fc *fieldComponent) buildPhone() (*dom.Element, *dom.Element) {
 	sel := dom.NewElement("select").
 		Class(widget.NameField.Class(widget.PartInput).String(), widget.NameField.Class(widget.PartSelect).String(), widget.NameField.Class(widget.PartPrefix).String()).
 		Attr("aria-label", lang.Translate("Country prefix").String()).
+		Attr("autocomplete", "tel-country-code").
 		BindAttrBoolFunc("disabled", fc.isDisabledOrLocked).
 		Bind(prefix).
 		OnChange(func(e dom.Event) {
