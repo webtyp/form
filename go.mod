@@ -9,7 +9,7 @@ require (
 	webtyp.com/dom v0.13.32
 	webtyp.com/fmt v1.0.2
 	webtyp.com/input v0.2.4
-	webtyp.com/lang v0.1.20
+	webtyp.com/lang v0.1.22
 	webtyp.com/model v0.2.23
 	webtyp.com/widget v0.6.50
 )
