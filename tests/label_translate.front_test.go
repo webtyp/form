@@ -39,11 +39,8 @@ func (s *translateStruct) Values() []any {
 }
 
 func TestTranslateWASM(t *testing.T) {
-	script := js.Global().Get("document").Call("createElement", "script")
-	script.Set("type", "application/json")
-	script.Set("id", lang.ScriptID)
-	script.Set("textContent", `{"default":"es","languages":["es"],"keys":{"Computer":["Computador"],"IP address":["Dirección IP"],"Submit":["Guardar"],"example:":["ejemplo:"],"is active":["Activo"]}}`)
-	js.Global().Get("document").Get("head").Call("appendChild", script)
+	parsed := js.Global().Get("JSON").Call("parse", `{"default":"es","languages":["es"],"keys":{"Computer":["Computador"],"IP address":["Dirección IP"],"Submit":["Guardar"],"example:":["ejemplo:"],"is active":["Activo"]}}`)
+	js.Global().Set(lang.GlobalDictKey, parsed)
 
 	lang.OutLang(lang.ES)
 

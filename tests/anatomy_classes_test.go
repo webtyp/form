@@ -15,7 +15,6 @@ import "webtyp.com/widget"
 var (
 	clsField       = widget.NameField.Root().String()
 	clsFieldLabel  = widget.NameField.Class(widget.PartLabel).String()
-	clsFieldInput  = widget.NameField.Class(widget.PartInput).String()
 	clsFieldError  = widget.NameField.Class(widget.PartError).String()
 	clsFieldSubmit = widget.NameField.Class(widget.PartSubmit).String()
 	clsFieldRadios = widget.NameField.Class(widget.PartRadioGroup).String()
