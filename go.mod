@@ -11,7 +11,7 @@ require (
 	webtyp.com/input v0.2.4
 	webtyp.com/lang v0.1.20
 	webtyp.com/model v0.2.23
-	webtyp.com/widget v0.6.49
+	webtyp.com/widget v0.6.50
 )
 
 require (
