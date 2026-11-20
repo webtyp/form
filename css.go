@@ -85,17 +85,18 @@ func RenderCSS() *css.Stylesheet {
 		).
 		// Bottom-right corner of the field, not top-right: PartError already
 		// owns the top-right corner (the two would overlap the moment a
-		// masked field also has an error to show). Docked has no
-		// vertical-center primitive today — a real gap in the DSL, not
-		// solved here — so bottom-right is the closest fit that never
-		// collides with the label chip (top) or the error message (top,
-		// trailing). ControlBox matches PartInput/PartSubmit's own tap
-		// target instead of a bespoke size. Inactive by default (a quiet
-		// affordance, not a second call to action next to the field it
-		// sits in) — When(Selected, …) below brightens it once revealed.
+		// masked field also has an error to show). SpaceNone on Docked lines
+		// the button's ControlBox up flush with PartInput's own ControlBox
+		// box on the bottom edge so the eye glyph sits centered on the input's
+		// midline; Space2 pushed the button 8px below the input box. Inactive
+		// by default (a quiet affordance, not a second call to action next to
+		// the field it sits in) — When(Selected, …) below switches it to
+		// Primary once revealed (≥4.5:1 on the white Field surface; Accent
+		// amber was ~1.7:1).
 		Part(widget.PartReveal,
-			style.Docked(style.Parent, style.EdgeBottom, style.SideEnd, style.Space2),
-			style.Glyph(style.Inactive),
+			style.Docked(style.Parent, style.EdgeBottom, style.SideEnd, style.SpaceNone),
+			style.As(style.Subtle),
+			style.Interactive(style.Bare),
 			style.ControlBox(),
 		).
 		Part(widget.PartRadioGroup,
@@ -208,7 +209,7 @@ func RenderCSS() *css.Stylesheet {
 		// value is showing (see form's wireMaskToggle) — When targets the
 		// same element the state is written on, unlike WhenWithin above.
 		When(widget.Selected, widget.PartReveal,
-			style.Glyph(style.Accent),
+			style.Glyph(style.Primary),
 		).
 		When(widget.SpanFull, "",
 			style.SpanFull(),
