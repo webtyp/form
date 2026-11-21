@@ -35,6 +35,7 @@ type Form struct {
 	locked             *dom.SignalBool                  // Whole-form read-only gate (see SetLocked)
 	focused            string                           // id Focus() last targeted (see FocusedFieldID)
 	baseline           []string                         // last loaded/reset value per input — see IsDirty
+	touched            []bool                           // fields explicitly committed by the user since last load/reset — see TouchedFields
 	showFields         []fmt.KeyValue                   // PK field names opted back in via ShowField — see New
 	hiddenPKIndices    []int                            // schema indices of PK fields New skipped — see sync.go
 	carryIndices       []int                            // schema indices of fields with no input and no PK: the form never shows them — see sync.go
@@ -218,12 +219,27 @@ func (f *Form) DirtyFields() []string {
 	return names
 }
 
+// TouchedFields names every field the user explicitly committed since the last
+// load/reset — even if its final value equals the blank baseline (e.g. toggling
+// a checkbox ON then OFF to bulk-deactivate records). Used by bulk edit so
+// untouched fields are never sent or blanked out.
+func (f *Form) TouchedFields() []string {
+	var names []string
+	for i := range f.touched {
+		if f.touched[i] || f.isDirtyAt(i) {
+			names = append(names, f.Inputs[i].FieldName())
+		}
+	}
+	return names
+}
+
 // MarkPristine re-snapshots the baseline to the form's CURRENT values. A host
 // calls this right after a successful save so a later field commit, with
 // nothing further changed since that save, is not considered dirty again.
 func (f *Form) MarkPristine() {
 	for i, sig := range f.valueSignals {
 		f.baseline[i] = sig.Get()
+		f.touched[i] = false
 	}
 }
 
@@ -314,6 +330,7 @@ func New(parentID string, data model.Fielder, idGen model.IDGenerator, opts ...O
 		submitting:   dom.NewBool(false),
 		locked:       dom.NewBool(false),
 		baseline:     make([]string, 0, len(schema)),
+		touched:      make([]bool, 0, len(schema)),
 	}
 	for _, opt := range opts {
 		opt(f)
@@ -372,9 +389,12 @@ func New(parentID string, data model.Fielder, idGen model.IDGenerator, opts ...O
 		f.valueSignals = append(f.valueSignals, vSig)
 		f.errorSignals = append(f.errorSignals, eSig)
 		f.baseline = append(f.baseline, val)
-		label := inp.GetTitle()
-		if label == "" || label == field.Name {
-			label = field.Label
+		f.touched = append(f.touched, false)
+		label := field.Label
+		if label == "" {
+			if t := inp.GetTitle(); t != "" && t != field.Name {
+				label = t
+			}
 		}
 		if label == "" {
 			label = humanize(field.Name)
@@ -399,6 +419,7 @@ func New(parentID string, data model.Fielder, idGen model.IDGenerator, opts ...O
 			tip:      tip,
 			locked:   f.locked,
 			onCommit: func() {
+				f.touched[at] = true
 				f.reconcileShown()
 				if f.onFieldChange != nil {
 					f.onFieldChange()
@@ -499,6 +520,7 @@ func (f *Form) reset() {
 		f.setValue(i, "")
 		f.errorSignals[i].Set("")
 		f.baseline[i] = "" // a reset form is pristine — see IsDirty
+		f.touched[i] = false
 
 		// Clear internal state (used by SSR/SyncValues if signals not available)
 		if setter, ok := inp.(interface{ SetValues(...string) }); ok {

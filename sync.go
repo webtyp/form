@@ -54,6 +54,10 @@ func (f *Form) SyncValues(data model.Fielder) error {
 	// it wrote edits onto whichever record was synced last.
 	for k, idx := range f.hiddenPKIndices {
 		ptr, st := pointers[idx], schema[idx].Type.Storage()
+		if schema[idx].ServerOnly {
+			zeroField(ptr, st)
+			continue
+		}
 		if f.loadedPK[k] == "" && st == model.FieldText {
 			f.loadedPK[k] = f.idGen.NewID() // a new record keeps this id across retries until Reset
 		}
@@ -71,7 +75,7 @@ func (f *Form) SyncValues(data model.Fielder) error {
 	if f.hasCarried {
 		for k, idx := range f.carryIndices {
 			ptr, st := pointers[idx], schema[idx].Type.Storage()
-			if f.carried[k] == "" {
+			if schema[idx].ServerOnly || f.carried[k] == "" {
 				zeroField(ptr, st)
 				continue
 			}

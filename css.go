@@ -82,6 +82,7 @@ func RenderCSS() *css.Stylesheet {
 		// The native option list of a select, in the accent (selection colour).
 		Part(widget.PartSelect,
 			style.Picker(),
+			style.FontSize(style.TextBase),
 		).
 		// Bottom-right corner of the field, not top-right: PartError already
 		// owns the top-right corner (the two would overlap the moment a
@@ -104,6 +105,8 @@ func RenderCSS() *css.Stylesheet {
 		).
 		Part(widget.PartRadioOption,
 			style.Button(style.Panel),
+			style.Row(style.Space2),
+			style.CenterContent(),
 			style.Round(style.RadiusMd),
 		).
 		Part(widget.PartRadioNative,
